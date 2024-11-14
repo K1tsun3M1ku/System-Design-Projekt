@@ -1,13 +1,19 @@
 // WARNING: remove this header when compiling
 #include "headers/NBCCommon.h"
+#include <time.h>
 
 /*
- * ██████████
- * █ STATES █
- * ██████████
+ * ████████████████████
+ * █ STATES AND TASKS █
+ * ████████████████████
  */
 #define STATE_INITIALIZE 0
 #define STATE_FOLLOW_LINE 1
+#define STATE_APPROACH_WALL 2
+#define STATE_APPROACH_BARRIER 3
+
+#define TASK_APPROACH_WALL 0
+#define TASK_APPROACH_BARRIER 1
 
 /*
  * █████████████
@@ -22,7 +28,10 @@
 #define MOTOR_LEFT OUT_A
 #define MOTOR_RIGHT OUT_B
 #define MOTOR_BOTH OUT_AB
+// NOTE: controls how fast the robot takes a turn. One motor is at 100%. The other is at (100 - MOTOR_CURVE_DRAW)%
 #define MOTOR_CURVE_DRAW 20
+
+#define GAP_MOE 6.0
 
 /*
  * ████████████████████
@@ -30,13 +39,10 @@
  * ████████████████████
  */
 int state = STATE_INITIALIZE;
-
-/*
- * ████████████████████
- * █ GLOBAL VARIABLES █
- * ████████████████████
- */
+int next_task = TASK_APPROACH_WALL;
 int light_threshold = -1; // NOTE: lighter color reflects more light -> Higher measurement
+int speed = -1;
+clock_t gap_start = -1;
 
 int initialize() {
   // initialize sensors
@@ -71,6 +77,26 @@ int follow_line() {
     OnFwd(MOTOR_RIGHT, 100 - MOTOR_CURVE_DRAW);
   } else {
     // TODO: move forward and count gap
+    if (speed == -1) {
+      return STATE_APPROACH_WALL;
+    } else {
+      // HACK: move this to point after speed is calculated
+      double required_time = GAP_MOE / speed;
+
+      if (gap_start == -1) {
+        gap_start = clock();
+      } else {
+        clock_t gap_now = clock();
+        double time_difference = (double)(gap_now - gap_start) * 1000 / CLOCKS_PER_SEC;
+        if (time_difference > required_time) {
+          // NOTE: detected gap
+          gap_start = -1;
+          if (next_task == TASK_APPROACH_BARRIER) {
+            return STATE_APPROACH_BARRIER;
+          }
+        }
+      }
+    }
   }
   return -1;
 }
