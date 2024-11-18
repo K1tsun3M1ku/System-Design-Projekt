@@ -60,6 +60,8 @@ void SetSensorUltrasonic(byte port);
 
 unsigned int Sensor(byte port);
 
+char TextOut(int x, int y, char *str);
+
 /** @addtogroup MiscConstants
  * @{
  */

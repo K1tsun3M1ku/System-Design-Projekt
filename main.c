@@ -1,5 +1,5 @@
 // WARNING: remove this header when compiling
-#include "headers/NBCCommon.h"
+// #include "headers/NBCCommon.h"
 
 /*
  * ██████████
@@ -16,8 +16,8 @@
  */
 #define SENSOR_LEFT IN_1
 #define SENSOR_RIGHT IN_2
-#define SENSOR_LINE IN_3
-#define SENSOR_ULTRASONIC IN_4
+#define SENSOR_LINE IN_4
+#define SENSOR_ULTRASONIC IN_3
 
 #define MOTOR_LEFT OUT_A
 #define MOTOR_RIGHT OUT_B
@@ -59,17 +59,21 @@ int follow_line() {
   unsigned int difference_right = Sensor(SENSOR_RIGHT) - value_line;
 
   if (difference_left > light_threshold && difference_right > light_threshold) {
+    TextOut(0, 0, "move forward!");
     // NOTE: move forward
-    OnFwd(MOTOR_BOTH, 100);
+    // OnFwd(MOTOR_BOTH, 100);
   } else if (difference_left <= light_threshold && difference_right > light_threshold) {
+    TextOut(0, 0, "move left!");
     // NOTE: move left
-    OnFwd(MOTOR_RIGHT, 100);
-    OnFwd(MOTOR_LEFT, 100 - MOTOR_CURVE_DRAW);
+    // OnFwd(MOTOR_RIGHT, 100);
+    // OnFwd(MOTOR_LEFT, 100 - MOTOR_CURVE_DRAW);
   } else if (difference_left > light_threshold && difference_right <= light_threshold) {
+    TextOut(0, 0, "move right!");
     // NOTE: move right
-    OnFwd(MOTOR_LEFT, 100);
-    OnFwd(MOTOR_RIGHT, 100 - MOTOR_CURVE_DRAW);
+    // OnFwd(MOTOR_LEFT, 100);
+    // OnFwd(MOTOR_RIGHT, 100 - MOTOR_CURVE_DRAW);
   } else {
+    TextOut(0, 0, "gap!");
     // TODO: move forward and count gap
   }
   return -1;
