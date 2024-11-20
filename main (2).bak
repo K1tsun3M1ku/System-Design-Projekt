@@ -15,13 +15,13 @@
  * ¦¦¦¦¦¦¦¦¦¦¦¦¦
  */
 #define SENSOR_LEFT IN_1
-#define SENSOR_RIGHT IN_2
+#define SENSOR_RIGHT IN_4
 #define SENSOR_LINE IN_4
-#define SENSOR_ULTRASONIC IN_3
+#define SENSOR_ULTRASONIC IN_1
 
 #define MOTOR_LEFT OUT_A
-#define MOTOR_RIGHT OUT_B
-#define MOTOR_BOTH OUT_AB
+#define MOTOR_RIGHT OUT_C
+#define MOTOR_BOTH OUT_AC
 #define MOTOR_CURVE_DRAW 20
 
 /*
@@ -37,6 +37,9 @@ int state = STATE_INITIALIZE;
  * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
  */
 int light_threshold = -1; // NOTE: lighter color reflects more light -> Higher measurement
+int approx_speed = -1;
+int gap_min_diff = -1;
+int gap_traversed = 0;
 
 inline int initialize() {
   // initialize sensors
@@ -60,31 +63,26 @@ inline int follow_line() {
   unsigned int difference_left = value_left - value_line;
   unsigned int difference_right = value_right - value_line;
 
-  /*
-  string str1 ="Test";
-  sprintf(str1, "l %d", value_left);
-  char str2[10];
-  sprintf(str2, "l %i-%i=%i", value_right, value_line, difference_right);
-  char str3[10];
-  sprintf(str3, "thresh=%i", light_threshold);
-  */
   TextOut(0, 24, StrCat("l=", NumToStr(value_left), "-", NumToStr(value_line), "=", NumToStr(difference_left), "       "));
   TextOut(0, 16, StrCat("r=", NumToStr(value_right), "-", NumToStr(value_line), "=", NumToStr(difference_right), "       "));
   TextOut(0, 8, StrCat("t=", NumToStr(light_threshold)));
 
   if (difference_left > light_threshold && difference_right > light_threshold) {
+    gap_traversed = 0;
     TextOut(0, 0, "move forward!");
     TextOut(0, 0, "move forward!");
     // NOTE: move forward
     OnFwd(MOTOR_BOTH, 100);
     return STATE_FOLLOW_LINE;
   } else if (difference_left <= light_threshold && difference_right > light_threshold) {
+    gap_traversed = 0;
     TextOut(0, 0, "move left!   ");
     // NOTE: move left
     OnFwd(MOTOR_RIGHT, 100);
     OnFwd(MOTOR_LEFT, 100 - MOTOR_CURVE_DRAW);
     return STATE_FOLLOW_LINE;
   } else if (difference_left > light_threshold && difference_right <= light_threshold) {
+    gap_traversed = 0;
     TextOut(0, 0, "move right!    ");
     // NOTE: move right
     OnFwd(MOTOR_LEFT, 100);
@@ -92,21 +90,60 @@ inline int follow_line() {
     return STATE_FOLLOW_LINE;
   } else {
     TextOut(0, 0, "gap!        ");
+    OnFwd(MOTOR_BOTH, 100);
     // TODO: move forward and count gap
+    
+    if(gap_min_diff == -1) {
+      // TODO: measure gap
+    } else {
+      if(gap_traversed > gap_min_diff) {
+        // TODO: jumpt to next task
+      } else {
+        Wait(MS_50);
+        gap_traversed += MS_50;
+        return STATE_FOLLOW_LINE;
+      }
+    }
+    
     return STATE_FOLLOW_LINE;
   }
   return -1;
 }
 
+inline void measureGap() {
+  int distance_start = SensorUS(SENSOR_ULTRASONIC);
+  int distance_now = INT_MAX;
+  int time_diff = 0;
+  do {
+    distance_now = SensorUS(SENSOR_ULTRASONIC);
+    TextOut(0, 24, StrCat("Distance", NumToStr(distance_start), "         "));
+    TextOut(0, 16, StrCat("Distance", NumToStr(distance_now), "         "));
+    TextOut(0, 8, StrCat("time", NumToStr(time_diff), "         "));
+    OnRev(MOTOR_BOTH, 50);
+    time_diff += 5;
+  } while(distance_now > 10);
+  approx_speed = (2 * ((distance_start - distance_now) / time_diff));
+  TextOut(0, 0, StrCat("speed", NumToStr(approx_speed), "      "));
+}
+
+
+
 task main() {
-  while (1) {
+  initialize();
+  measureGap();
+  while(1) {
+    Wait(MS_500);
+  }
+  /*while (1) {
     switch (state) {
     case STATE_INITIALIZE:
       state = initialize();
       break;
     case STATE_FOLLOW_LINE:
-      state = follow_line();
+      //state = follow_line();
+      measureGap();
       break;
     }
-  }
+  }*/
+
 }
