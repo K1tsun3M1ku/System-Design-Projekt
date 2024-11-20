@@ -1,5 +1,5 @@
 // WARNING: remove this header when compiling
-// #include "headers/NBCCommon.h"
+#include "headers/NBCCommon.h"
 
 /*
  * ¦¦¦¦¦¦¦¦¦¦
@@ -48,7 +48,7 @@ inline int initialize() {
   // calculate difference between floor and line
   int test = Sensor(SENSOR_LEFT);
   unsigned int light_average = (Sensor(SENSOR_LEFT) + Sensor(SENSOR_RIGHT)) / 2;
-  light_threshold = 0.3 * (light_average - Sensor(SENSOR_LINE));
+  light_threshold = 0.5 * (light_average - Sensor(SENSOR_LINE));
 
   return STATE_FOLLOW_LINE;
 }
@@ -71,23 +71,24 @@ inline int follow_line() {
   TextOut(0, 24, StrCat("l=", NumToStr(value_left), "-", NumToStr(value_line), "=", NumToStr(difference_left), "       "));
   TextOut(0, 16, StrCat("r=", NumToStr(value_right), "-", NumToStr(value_line), "=", NumToStr(difference_right), "       "));
   TextOut(0, 8, StrCat("t=", NumToStr(light_threshold)));
+
   if (difference_left > light_threshold && difference_right > light_threshold) {
     TextOut(0, 0, "move forward!");
     TextOut(0, 0, "move forward!");
     // NOTE: move forward
-    // OnFwd(MOTOR_BOTH, 100);
+    OnFwd(MOTOR_BOTH, 100);
     return STATE_FOLLOW_LINE;
   } else if (difference_left <= light_threshold && difference_right > light_threshold) {
     TextOut(0, 0, "move left!   ");
     // NOTE: move left
-    // OnFwd(MOTOR_RIGHT, 100);
-    // OnFwd(MOTOR_LEFT, 100 - MOTOR_CURVE_DRAW);
+    OnFwd(MOTOR_RIGHT, 100);
+    OnFwd(MOTOR_LEFT, 100 - MOTOR_CURVE_DRAW);
     return STATE_FOLLOW_LINE;
   } else if (difference_left > light_threshold && difference_right <= light_threshold) {
     TextOut(0, 0, "move right!    ");
     // NOTE: move right
-    // OnFwd(MOTOR_LEFT, 100);
-    // OnFwd(MOTOR_RIGHT, 100 - MOTOR_CURVE_DRAW);
+    OnFwd(MOTOR_LEFT, 100);
+    OnFwd(MOTOR_RIGHT, 100 - MOTOR_CURVE_DRAW);
     return STATE_FOLLOW_LINE;
   } else {
     TextOut(0, 0, "gap!        ");

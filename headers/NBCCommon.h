@@ -34,6 +34,7 @@
  */
 typedef unsigned char byte;
 typedef void task;
+typedef char *string;
 
 #include <stdbool.h>
 
@@ -61,6 +62,10 @@ void SetSensorUltrasonic(byte port);
 unsigned int Sensor(byte port);
 
 char TextOut(int x, int y, char *str);
+
+string NumToStr(int num);
+
+string StrCat(string str1, string str2, ...);
 
 /** @addtogroup MiscConstants
  * @{
