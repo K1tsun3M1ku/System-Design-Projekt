@@ -44,7 +44,7 @@ int light_threshold = -1; // NOTE: lighter color reflects more light -> Higher m
 int speed = -1;
 clock_t gap_start = -1;
 
-int initialize() {
+inline int initialize() {
   // initialize sensors
   SetSensorLight(SENSOR_LEFT);
   SetSensorLight(SENSOR_RIGHT);
@@ -59,10 +59,12 @@ int initialize() {
   return STATE_FOLLOW_LINE;
 }
 
-int follow_line() {
+inline int follow_line() {
+  unsigned int value_left = Sensor(SENSOR_LEFT);
+  unsigned int value_right = Sensor(SENSOR_RIGHT);
   unsigned int value_line = Sensor(SENSOR_LINE);
-  unsigned int difference_left = Sensor(SENSOR_LEFT) - value_line;
-  unsigned int difference_right = Sensor(SENSOR_RIGHT) - value_line;
+  unsigned int difference_left = value_left - value_line;
+  unsigned int difference_right = value_right - value_line;
 
   if (difference_left > light_threshold && difference_right > light_threshold) {
     // NOTE: move forward
