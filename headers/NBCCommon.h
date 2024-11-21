@@ -41,6 +41,7 @@ typedef char *string;
 #pragma clang diagnostic ignored "-Wmain-return-type"
 
 void OnFwd(byte outputs, char pwr);
+void OnRev(byte outputs, char pwr);
 /**
  * Turn motors off.
  * Turn the specified outputs off (with braking).
@@ -60,12 +61,15 @@ void SetSensorLight(byte port);
 void SetSensorUltrasonic(byte port);
 
 unsigned int Sensor(byte port);
+unsigned int SensorUS(byte port);
 
 char TextOut(int x, int y, char *str);
 
 string NumToStr(int num);
 
 string StrCat(string str1, string str2, ...);
+
+void StartTask(void(*t));
 
 /** @addtogroup MiscConstants
  * @{
@@ -98,20 +102,20 @@ string StrCat(string str1, string str2, ...);
  */
 // array operation definitions
 #define OPARR_SUM 0x00 /*!< Calculate the sum of the elements in the numeric input array */
-#define OPARR_MEAN                                                                                                     \
-  0x01 /*!< Calculate the mean value for the elements in the numeric input                                             \
+#define OPARR_MEAN                                                                                                                                                                 \
+  0x01 /*!< Calculate the mean value for the elements in the numeric input                                                                                                         \
           array */
-#define OPARR_SUMSQR                                                                                                   \
-  0x02 /*!< Calculate the sum of the squares of the elements in the numeric                                            \
+#define OPARR_SUMSQR                                                                                                                                                               \
+  0x02 /*!< Calculate the sum of the squares of the elements in the numeric                                                                                                        \
           input array */
-#define OPARR_STD                                                                                                      \
-  0x03 /*!< Calculate the standard deviation of the elements in the numeric                                            \
+#define OPARR_STD                                                                                                                                                                  \
+  0x03 /*!< Calculate the standard deviation of the elements in the numeric                                                                                                        \
           input array */
-#define OPARR_MIN                                                                                                      \
-  0x04 /*!< Calculate the minimum value of the elements in the numeric input                                           \
+#define OPARR_MIN                                                                                                                                                                  \
+  0x04 /*!< Calculate the minimum value of the elements in the numeric input                                                                                                       \
           array */
-#define OPARR_MAX                                                                                                      \
-  0x05                  /*!< Calculate the maximum value of the elements in the numeric input                          \
+#define OPARR_MAX                                                                                                                                                                  \
+  0x05                  /*!< Calculate the maximum value of the elements in the numeric input                                                                                      \
                            array */
 #define OPARR_SORT 0x06 /*!< Sort the elements in the numeric input array */
 /** @} */               // end of ArrayOpConstants group
@@ -274,11 +278,11 @@ string StrCat(string str1, string str2, ...);
 #define CommBTWrite 29       /*!< Write to a bluetooth connections */
 #define CommBTRead 30        /*!< Read from a bluetooth connection */
 #define KeepAlive 31         /*!< Reset the NXT sleep timer */
-#define IOMapRead                                                                                                      \
-  32 /*!< Read data from one of the firmware module's IOMap structures using                                           \
+#define IOMapRead                                                                                                                                                                  \
+  32 /*!< Read data from one of the firmware module's IOMap structures using                                                                                                       \
         the module's name */
-#define IOMapWrite                                                                                                     \
-  33 /*!< Write data to one of the firmware module's IOMap structures using                                            \
+#define IOMapWrite                                                                                                                                                                 \
+  33 /*!< Write data to one of the firmware module's IOMap structures using                                                                                                        \
         the module's name */
 
 #if __FIRMWARE_VERSION <= 107
@@ -316,11 +320,11 @@ string StrCat(string str1, string str2, ...);
 #define ListFiles 47            /*!< List files that match the specified filename pattern */
 
 #ifdef __ENHANCED_FIRMWARE
-#define IOMapReadByID                                                                                                  \
-  78 /*!< Read data from one of the firmware module's IOMap structures using                                           \
+#define IOMapReadByID                                                                                                                                                              \
+  78 /*!< Read data from one of the firmware module's IOMap structures using                                                                                                       \
         the module's ID */
-#define IOMapWriteByID                                                                                                 \
-  79                              /*!< Write data to one of the firmware module's IOMap structures using               \
+#define IOMapWriteByID                                                                                                                                                             \
+  79                              /*!< Write data to one of the firmware module's IOMap structures using                                                                           \
                                      the module's ID */
 #define DisplayExecuteFunction 80 /*!< Execute one of the Display module's internal functions */
 #define CommExecuteFunction 81    /*!< Execute one of the Comm module's internal functions */
@@ -331,8 +335,8 @@ string StrCat(string str1, string str2, ...);
 #define FileOpenWriteNonLinear 86 /*!< Open a non-linear file for writing */
 #define FileOpenReadLinear 87     /*!< Open a linear file for reading */
 #define CommHSControl 88          /*!< Control the hi-speed port */
-#define CommLSWriteEx                                                                                                  \
-  89                        /*!< Write to a lowspeed (aka I2C) device with optional restart on read                    \
+#define CommLSWriteEx                                                                                                                                                              \
+  89                        /*!< Write to a lowspeed (aka I2C) device with optional restart on read                                                                                \
                              */
 #define FileSeek 90         /*!< Seek to a specific position in an open file */
 #define FileResize 91       /*!< Resize a file (not yet implemented) */
@@ -340,11 +344,11 @@ string StrCat(string str1, string str2, ...);
 #define DrawPolygon 93      /*!< Draw a polygon on the LCD screen */
 #define DrawEllipse 94      /*!< Draw an ellipse on the LCD screen */
 #define DrawFont 95         /*!< Draw text using a custom RIC-based font to the LCD screen */
-#define MemoryManager                                                                                                  \
-  96 /*!< Read memory manager information, optionally compacting the dataspace                                         \
+#define MemoryManager                                                                                                                                                              \
+  96 /*!< Read memory manager information, optionally compacting the dataspace                                                                                                     \
         first */
-#define ReadLastResponse                                                                                               \
-  97                /*!< Read the last response packet received by the NXT.  Optionally clear                          \
+#define ReadLastResponse                                                                                                                                                           \
+  97                /*!< Read the last response packet received by the NXT.  Optionally clear                                                                                      \
                        the value after reading it. */
 #define FileTell 98 /*!< Return the current file position in an open file */
 #endif
@@ -528,17 +532,17 @@ string StrCat(string str1, string str2, ...);
 #define ERR_NO_CODE -8        /*!< 0xF8 VarsCmd.CodespaceCount == 0 */
 #define ERR_INSANE_OFFSET -9  /*!< 0xF7 CurrOffset != (DataSize - VarsCmd.CodespaceCount * 2) */
 #define ERR_BAD_POOL_SIZE -10 /*!< 0xF6 VarsCmd.PoolSize > POOL_MAX_SIZE */
-#define ERR_LOADER_ERR                                                                                                 \
-  -11                           /*!< 0xF5 LOADER_ERR(LStatus) != SUCCESS || pData == NULL || DataSize ==               \
+#define ERR_LOADER_ERR                                                                                                                                                             \
+  -11                           /*!< 0xF5 LOADER_ERR(LStatus) != SUCCESS || pData == NULL || DataSize ==                                                                           \
                                    0 */
 #define ERR_SPOTCHECK_FAIL -12  /*!< 0xF4 ((UBYTE*)(VarsCmd.pCodespace) < pData) (c_cmd.c 1893) */
 #define ERR_NO_ACTIVE_CLUMP -13 /*!< 0xF3 VarsCmd.RunQ.Head == NOT_A_CLUMP */
-#define ERR_DEFAULT_OFFSETS                                                                                            \
-  -14 /*!< 0xF2 (DefaultsOffset != FileOffsets.DynamicDefaults) ||                                                     \
-         (DefaultsOffset + FileOffsets.DynamicDefaultsSize !=                                                          \
+#define ERR_DEFAULT_OFFSETS                                                                                                                                                        \
+  -14 /*!< 0xF2 (DefaultsOffset != FileOffsets.DynamicDefaults) ||                                                                                                                 \
+         (DefaultsOffset + FileOffsets.DynamicDefaultsSize !=                                                                                                                      \
          FileOffsets.DSDefaultsSize) */
-#define ERR_MEMMGR_FAIL                                                                                                \
-  -15 /*!< 0xF1 (UBYTE *)VarsCmd.MemMgr.pDopeVectorArray != VarsCmd.pDataspace                                         \
+#define ERR_MEMMGR_FAIL                                                                                                                                                            \
+  -15 /*!< 0xF1 (UBYTE *)VarsCmd.MemMgr.pDopeVectorArray != VarsCmd.pDataspace                                                                                                     \
          + DV_ARRAY[0].Offset */
 
 #define ERR_NON_FATAL -16 /*!< Fatal errors are greater than this value */
@@ -649,8 +653,8 @@ string StrCat(string str1, string str2, ...);
  * Constant offsets into the Loader module IOMAP structure.
  * @{
  */
-#define LoaderOffsetPFunc                                                                                              \
-  0                                 /*!< Offset to the Loader module function pointer                                  \
+#define LoaderOffsetPFunc                                                                                                                                                          \
+  0                                 /*!< Offset to the Loader module function pointer                                                                                              \
                                      */
 #define LoaderOffsetFreeUserFlash 4 /*!< Offset to the amount of free user flash */
 /** @} */                           // end of LoaderIOMAP group
@@ -665,8 +669,8 @@ string StrCat(string str1, string str2, ...);
 #define LDR_SUCCESS 0x0000    /*!< The function completed successfully. */
 #define LDR_INPROGRESS 0x0001 /*!< The function is executing but has not yet completed. */
 #define LDR_REQPIN 0x0002     /*!< A PIN exchange request is in progress. */
-#define LDR_NOMOREHANDLES                                                                                              \
-  0x8100                               /*!< All available file handles are in use.                                     \
+#define LDR_NOMOREHANDLES                                                                                                                                                          \
+  0x8100                               /*!< All available file handles are in use.                                                                                                 \
                                         */
 #define LDR_NOSPACE 0x8200             /*!< Not enough free flash memory for the specified file size. */
 #define LDR_NOMOREFILES 0x8300         /*!< The maximum number of files has been reached. */
@@ -679,17 +683,17 @@ string StrCat(string str1, string str2, ...);
 #define LDR_UNDEFINEDERROR 0x8A00      /*!< An undefined error has occurred. */
 #define LDR_FILEISBUSY 0x8B00          /*!< The file is already being used. */
 #define LDR_NOWRITEBUFFERS 0x8C00      /*!< No more write buffers are available. */
-#define LDR_APPENDNOTPOSSIBLE                                                                                          \
-  0x8D00                      /*!< Only datafiles can be appended to.                                                  \
+#define LDR_APPENDNOTPOSSIBLE                                                                                                                                                      \
+  0x8D00                      /*!< Only datafiles can be appended to.                                                                                                              \
                                */
 #define LDR_FILEISFULL 0x8E00 /*!< The allocated file size has been filled. */
-#define LDR_FILEEXISTS                                                                                                 \
-  0x8F00                          /*!< A file with the same name already exists.                                       \
+#define LDR_FILEEXISTS                                                                                                                                                             \
+  0x8F00                          /*!< A file with the same name already exists.                                                                                                   \
                                    */
 #define LDR_MODULENOTFOUND 0x9000 /*!< No modules matched the specified search criteria. */
 #define LDR_OUTOFBOUNDARY 0x9100  /*!< Specified IOMap offset is outside the bounds of the IOMap. */
-#define LDR_ILLEGALFILENAME                                                                                            \
-  0x9200                              /*!< Filename length to long or attempted open a system file (*.rxe,             \
+#define LDR_ILLEGALFILENAME                                                                                                                                                        \
+  0x9200                              /*!< Filename length to long or attempted open a system file (*.rxe,                                                                         \
                                        *.rtm, or *.sys) for writing as a datafile. */
 #define LDR_ILLEGALHANDLE 0x9300      /*!< Invalid file handle. */
 #define LDR_BTBUSY 0x9400             /*!< The bluetooth system is busy. */
@@ -796,17 +800,17 @@ string StrCat(string str1, string str2, ...);
 #define SoundOffsetFreq 0       /*!< RW - Tone frequency [Hz] (2 bytes) */
 #define SoundOffsetDuration 2   /*!< RW - Tone duration  [mS] (2 bytes) */
 #define SoundOffsetSampleRate 4 /*!< RW - Sound file sample rate [2000..16000] (2 bytes) */
-#define SoundOffsetSoundFilename                                                                                       \
-  6 /*!< RW - Sound/melody filename (20 bytes)                                                                         \
+#define SoundOffsetSoundFilename                                                                                                                                                   \
+  6 /*!< RW - Sound/melody filename (20 bytes)                                                                                                                                     \
      */
-#define SoundOffsetFlags                                                                                               \
-  26 /*!< RW - Play flag  - described above (1 byte) \ref SoundFlagsConstants                                          \
+#define SoundOffsetFlags                                                                                                                                                           \
+  26 /*!< RW - Play flag  - described above (1 byte) \ref SoundFlagsConstants                                                                                                      \
       */
-#define SoundOffsetState                                                                                               \
-  27 /*!< RW - Play state - described above (1 byte) \ref SoundStateConstants                                          \
+#define SoundOffsetState                                                                                                                                                           \
+  27 /*!< RW - Play state - described above (1 byte) \ref SoundStateConstants                                                                                                      \
       */
-#define SoundOffsetMode                                                                                                \
-  28                         /*!< RW - Play mode  - described above (1 byte) \ref SoundModeConstants                   \
+#define SoundOffsetMode                                                                                                                                                            \
+  28                         /*!< RW - Play mode  - described above (1 byte) \ref SoundModeConstants                                                                               \
                               */
 #define SoundOffsetVolume 29 /*!< RW - Sound/melody volume [0..4] 0 = off (1 byte) */
 /** @} */                    // end of SoundIOMAP group
@@ -928,21 +932,21 @@ string StrCat(string str1, string str2, ...);
  * Constant offsets into the Button module IOMAP structure.
  * @{
  */
-#define ButtonOffsetPressedCnt(b)                                                                                      \
-  (((b) * 8) + 0) /*!< Offset to the PressedCnt field. This field stores the                                           \
+#define ButtonOffsetPressedCnt(b)                                                                                                                                                  \
+  (((b) * 8) + 0) /*!< Offset to the PressedCnt field. This field stores the                                                                                                       \
                      press count. */
-#define ButtonOffsetLongPressCnt(b)                                                                                    \
-  (((b) * 8) + 1) /*!< Offset to the LongPressCnt field. This field stores the                                         \
+#define ButtonOffsetLongPressCnt(b)                                                                                                                                                \
+  (((b) * 8) + 1) /*!< Offset to the LongPressCnt field. This field stores the                                                                                                     \
                      long press count.*/
-#define ButtonOffsetShortRelCnt(b)                                                                                     \
-  (((b) * 8) + 2) /*!< Offset to the ShortRelCnt field. This field stores the                                          \
+#define ButtonOffsetShortRelCnt(b)                                                                                                                                                 \
+  (((b) * 8) + 2) /*!< Offset to the ShortRelCnt field. This field stores the                                                                                                      \
                      short release count. */
-#define ButtonOffsetLongRelCnt(b)                                                                                      \
-  (((b) * 8) + 3)                             /*!< Offset to the LongRelCnt field. This field stores the               \
+#define ButtonOffsetLongRelCnt(b)                                                                                                                                                  \
+  (((b) * 8) + 3)                             /*!< Offset to the LongRelCnt field. This field stores the                                                                           \
                                                  long release count. */
 #define ButtonOffsetRelCnt(b) (((b) * 8) + 4) /*!< Offset to the RelCnt field. This field stores the release count. */
-#define ButtonOffsetState(b)                                                                                           \
-  ((b) + 32) /*!< Offset to the State field. This field stores the current                                             \
+#define ButtonOffsetState(b)                                                                                                                                                       \
+  ((b) + 32) /*!< Offset to the State field. This field stores the current                                                                                                         \
                 button state. */
 /** @} */    // end of ButtonIOMAP group
 /** @} */    // end of ButtonModuleConstants group
@@ -976,8 +980,8 @@ string StrCat(string str1, string str2, ...);
  * @{
  */
 #define UI_STATE_INIT_DISPLAY 0 /*!< RW - Init display and load font, menu etc. */
-#define UI_STATE_INIT_LOW_BATTERY                                                                                      \
-  1                                 /*!< R  - Low battery voltage at power on                                          \
+#define UI_STATE_INIT_LOW_BATTERY                                                                                                                                                  \
+  1                                 /*!< R  - Low battery voltage at power on                                                                                                      \
                                      */
 #define UI_STATE_INIT_INTRO 2       /*!< R  - Display intro */
 #define UI_STATE_INIT_WAIT 3        /*!< RW - Wait for initialization end */
@@ -991,8 +995,8 @@ string StrCat(string str1, string str2, ...);
 #define UI_STATE_EXIT_PRESSED 11    /*!< RW - Load selected function and next menu id */
 #define UI_STATE_CONNECT_REQUEST 12 /*!< RW - Request for connection accept */
 #define UI_STATE_EXECUTE_FILE 13    /*!< RW - Execute file in "LMSfilename" */
-#define UI_STATE_EXECUTING_FILE                                                                                        \
-  14                            /*!< R  - Executing file in "LMSfilename"                                              \
+#define UI_STATE_EXECUTING_FILE                                                                                                                                                    \
+  14                            /*!< R  - Executing file in "LMSfilename"                                                                                                          \
                                  */
 #define UI_STATE_LOW_BATTERY 15 /*!< R  - Low battery at runtime */
 #define UI_STATE_BT_ERROR 16    /*!< R  - BT error */
@@ -1028,18 +1032,18 @@ string StrCat(string str1, string str2, ...);
  * \sa VMRunState()
  * @{
  */
-#define UI_VM_IDLE                                                                                                     \
-  0 /*!< VM_IDLE: Just sitting around.  Request to run program will lead to                                            \
+#define UI_VM_IDLE                                                                                                                                                                 \
+  0 /*!< VM_IDLE: Just sitting around.  Request to run program will lead to                                                                                                        \
        ONE of the VM_RUN* states. */
-#define UI_VM_RUN_FREE                                                                                                 \
-  1                        /*!< VM_RUN_FREE: Attempt to run as many instructions as possible within                    \
+#define UI_VM_RUN_FREE                                                                                                                                                             \
+  1                        /*!< VM_RUN_FREE: Attempt to run as many instructions as possible within                                                                                \
                               our timeslice */
 #define UI_VM_RUN_SINGLE 2 /*!< VM_RUN_SINGLE: Run exactly one instruction per timeslice */
-#define UI_VM_RUN_PAUSE                                                                                                \
-  3 /*!< VM_RUN_PAUSE: Program still "active", but someone has asked us to                                             \
+#define UI_VM_RUN_PAUSE                                                                                                                                                            \
+  3 /*!< VM_RUN_PAUSE: Program still "active", but someone has asked us to                                                                                                         \
        pause */
-#define UI_VM_RESET1                                                                                                   \
-  4                    /*!< VM_RESET1: Initialize state variables and some I/O devices --                              \
+#define UI_VM_RESET1                                                                                                                                                               \
+  4                    /*!< VM_RESET1: Initialize state variables and some I/O devices --                                                                                          \
                           executed when programs end */
 #define UI_VM_RESET2 5 /*!< VM_RESET2: Final clean up and return to IDLE */
 /** @} */              // end of UiVMRunStateConstants group
@@ -1056,23 +1060,23 @@ string StrCat(string str1, string str2, ...);
 #define UIOffsetButton 28        /*!< RW - Insert button         (buttons enumerated above) (1 byte) */
 #define UIOffsetRunState 29      /*!< W  - VM Run state          (0 = stopped, 1 = running) (1 byte) */
 #define UIOffsetBatteryState 30  /*!< W  - Battery state         (0..4 capacity) (1 byte) */
-#define UIOffsetBluetoothState                                                                                         \
-  31 /*!< W  - Bluetooth state       (0=on, 1=visible, 2=conn, 3=conn.visible,                                         \
+#define UIOffsetBluetoothState                                                                                                                                                     \
+  31 /*!< W  - Bluetooth state       (0=on, 1=visible, 2=conn, 3=conn.visible,                                                                                                     \
         4=off, 5=dfu) (1 byte) */
-#define UIOffsetUsbState                                                                                               \
-  32                            /*!< W  - Usb state             (0=disconnected, 1=connected, 2=working)               \
+#define UIOffsetUsbState                                                                                                                                                           \
+  32                            /*!< W  - Usb state             (0=disconnected, 1=connected, 2=working)                                                                           \
                                    (1 byte) */
 #define UIOffsetSleepTimeout 33 /*!< RW - Sleep timeout time    (min) (1 byte) */
-#define UIOffsetSleepTimer                                                                                             \
-  34                            /*!< RW - Sleep timer           (min) (1 byte)                                         \
+#define UIOffsetSleepTimer                                                                                                                                                         \
+  34                            /*!< RW - Sleep timer           (min) (1 byte)                                                                                                     \
                                  */
 #define UIOffsetRechargeable 35 /*!< R  - Rechargeable battery  (0 = no, 1 = yes) (1 byte) */
 #define UIOffsetVolume 36       /*!< RW - Volume used in UI     (0 - 4) (1 byte) */
 #define UIOffsetError 37        /*!< W  - Error code (1 byte) */
 #define UIOffsetOBPPointer 38   /*!< W  - Actual OBP step       (0 - 4) (1 byte) */
 #define UIOffsetForceOff 39     /*!< W  - Force off             (> 0 = off) (1 byte) */
-#define UIOffsetAbortFlag                                                                                              \
-  40      /*!< RW - Long Abort            (true == use long press to abort) (1                                         \
+#define UIOffsetAbortFlag                                                                                                                                                          \
+  40      /*!< RW - Long Abort            (true == use long press to abort) (1                                                                                                     \
              byte) */
 /** @} */ // end of UiIOMAP group
 
@@ -1139,16 +1143,16 @@ string StrCat(string str1, string str2, ...);
 #define IN_MODE_RAW 0x00           /*!< Raw value from 0 to 1023 */
 #define IN_MODE_BOOLEAN 0x20       /*!< Boolean value (0 or 1) */
 #define IN_MODE_TRANSITIONCNT 0x40 /*!< Counts the number of boolean transitions */
-#define IN_MODE_PERIODCOUNTER                                                                                          \
-  0x60                            /*!< Counts the number of boolean periods                                            \
+#define IN_MODE_PERIODCOUNTER                                                                                                                                                      \
+  0x60                            /*!< Counts the number of boolean periods                                                                                                        \
                                    */
 #define IN_MODE_PCTFULLSCALE 0x80 /*!< Scaled value from 0 to 100 */
 #define IN_MODE_CELSIUS 0xA0      /*!< RCX temperature sensor value in degrees celcius */
 #define IN_MODE_FAHRENHEIT 0xC0   /*!< RCX temperature sensor value in degrees fahrenheit */
 #define IN_MODE_ANGLESTEP 0xE0    /*!< RCX rotation sensor (16 ticks per revolution) */
 #define IN_MODE_SLOPEMASK 0x1F    /*!< Mask for slope parameter added to mode */
-#define IN_MODE_MODEMASK                                                                                               \
-  0xE0    /*!< Mask for the mode without any slope value                                                               \
+#define IN_MODE_MODEMASK                                                                                                                                                           \
+  0xE0    /*!< Mask for the mode without any slope value                                                                                                                           \
            */
 /** @} */ // end of NBCSensorModeConstants group
 /** @} */ // end of InputModuleTypesAndModes group
@@ -1159,20 +1163,20 @@ string StrCat(string str1, string str2, ...);
  * @{
  */
 #define TypeField 0 /*!< Type field. Contains one of the sensor type constants. Read/write. */
-#define InputModeField                                                                                                 \
-  1 /*!< Input mode field. Contains one of the sensor mode constants.                                                  \
+#define InputModeField                                                                                                                                                             \
+  1 /*!< Input mode field. Contains one of the sensor mode constants.                                                                                                              \
        Read/write. */
-#define RawValueField                                                                                                  \
-  2 /*!< Raw value field. Contains the current raw analog sensor value. Read                                           \
+#define RawValueField                                                                                                                                                              \
+  2 /*!< Raw value field. Contains the current raw analog sensor value. Read                                                                                                       \
        only. */
-#define NormalizedValueField                                                                                           \
-  3 /*!< Normalized value field. Contains the current normalized analog sensor                                         \
+#define NormalizedValueField                                                                                                                                                       \
+  3 /*!< Normalized value field. Contains the current normalized analog sensor                                                                                                     \
        value. Read only. */
-#define ScaledValueField                                                                                               \
-  4 /*!< Scaled value field. Contains the current scaled analog sensor value.                                          \
+#define ScaledValueField                                                                                                                                                           \
+  4 /*!< Scaled value field. Contains the current scaled analog sensor value.                                                                                                      \
        Read/write. */
-#define InvalidDataField                                                                                               \
-  5       /*!< Invalid data field. Contains a boolean value indicating whether the                                     \
+#define InvalidDataField                                                                                                                                                           \
+  5       /*!< Invalid data field. Contains a boolean value indicating whether the                                                                                                 \
              sensor data is valid or not. Read/write. */
 /** @} */ // end of InputFieldConstants group
 
@@ -1200,8 +1204,8 @@ string StrCat(string str1, string str2, ...);
  * ColorSensorReadType
  * @{
  */
-#define INPUT_RED                                                                                                      \
-  0                          /*!< Access the red value from color sensor value arrays                                  \
+#define INPUT_RED                                                                                                                                                                  \
+  0                          /*!< Access the red value from color sensor value arrays                                                                                              \
                               */
 #define INPUT_GREEN 1        /*!< Access the green value from color sensor value arrays */
 #define INPUT_BLUE 2         /*!< Access the blue value from color sensor value arrays */
@@ -1252,35 +1256,32 @@ string StrCat(string str1, string str2, ...);
  * Constant offsets into the Input module IOMAP structure.
  * @{
  */
-#define InputOffsetCustomZeroOffset(p)                                                                                 \
-  (((p) * 20) + 0)                                 /*!< Read/write the zero offset of a custom sensor (2 bytes) uword */
-#define InputOffsetADRaw(p) (((p) * 20) + 2)       /*!< Read the AD raw sensor value (2 bytes) uword */
-#define InputOffsetSensorRaw(p) (((p) * 20) + 4)   /*!< Read the raw sensor value (2 bytes) uword */
-#define InputOffsetSensorValue(p) (((p) * 20) + 6) /*!< Read/write the scaled sensor value (2 bytes) sword */
-#define InputOffsetSensorType(p) (((p) * 20) + 8)  /*!< Read/write the sensor type */
-#define InputOffsetSensorMode(p) (((p) * 20) + 9)  /*!< Read/write the sensor mode */
-#define InputOffsetSensorBoolean(p) (((p) * 20) + 10) /*!< Read the sensor boolean value */
-#define InputOffsetDigiPinsDir(p)                                                                                      \
-  (((p) * 20) + 11)                                        /*!< Read/write the direction of the Digital pins (1 is     \
+#define InputOffsetCustomZeroOffset(p) (((p) * 20) + 0) /*!< Read/write the zero offset of a custom sensor (2 bytes) uword */
+#define InputOffsetADRaw(p) (((p) * 20) + 2)            /*!< Read the AD raw sensor value (2 bytes) uword */
+#define InputOffsetSensorRaw(p) (((p) * 20) + 4)        /*!< Read the raw sensor value (2 bytes) uword */
+#define InputOffsetSensorValue(p) (((p) * 20) + 6)      /*!< Read/write the scaled sensor value (2 bytes) sword */
+#define InputOffsetSensorType(p) (((p) * 20) + 8)       /*!< Read/write the sensor type */
+#define InputOffsetSensorMode(p) (((p) * 20) + 9)       /*!< Read/write the sensor mode */
+#define InputOffsetSensorBoolean(p) (((p) * 20) + 10)   /*!< Read the sensor boolean value */
+#define InputOffsetDigiPinsDir(p)                                                                                                                                                  \
+  (((p) * 20) + 11)                                        /*!< Read/write the direction of the Digital pins (1 is                                                                 \
                                                               output, 0 is input) */
 #define InputOffsetDigiPinsIn(p) (((p) * 20) + 12)         /*!< Read/write the status of the digital pins */
 #define InputOffsetDigiPinsOut(p) (((p) * 20) + 13)        /*!< Read/write the output level of the digital pins */
 #define InputOffsetCustomPctFullScale(p) (((p) * 20) + 14) /*!< Read/write the Pct full scale of the custom sensor */
-#define InputOffsetCustomActiveStatus(p)                                                                               \
-  (((p) * 20) + 15)                                 /*!< Read/write the active or inactive state of the custom sensor */
-#define InputOffsetInvalidData(p) (((p) * 20) + 16) /*!< Indicates whether data is invalid (1) or valid (0) */
+#define InputOffsetCustomActiveStatus(p) (((p) * 20) + 15) /*!< Read/write the active or inactive state of the custom sensor */
+#define InputOffsetInvalidData(p) (((p) * 20) + 16)        /*!< Indicates whether data is invalid (1) or valid (0) */
 
 #if __FIRMWARE_VERSION > 107
-#define InputOffsetColorCalibration(p, np, nc)                                                                         \
-  (80 + ((p) * 84) + 0 + ((np) * 16) + ((nc) * 4)) /*!< Read/write color calibration point values */
-#define InputOffsetColorCalLimits(p, np)                                                                               \
-  (80 + ((p) * 84) + 48 + ((np) * 2))                                        /*!< Read/write color calibration limits  \
-                                                                              */
-#define InputOffsetColorADRaw(p, nc) (80 + ((p) * 84) + 52 + ((nc) * 2))     /*!< Read AD raw color sensor values */
-#define InputOffsetColorSensorRaw(p, nc) (80 + ((p) * 84) + 60 + ((nc) * 2)) /*!< Read raw color sensor values */
+#define InputOffsetColorCalibration(p, np, nc) (80 + ((p) * 84) + 0 + ((np) * 16) + ((nc) * 4)) /*!< Read/write color calibration point values */
+#define InputOffsetColorCalLimits(p, np)                                                                                                                                           \
+  (80 + ((p) * 84) + 48 + ((np) * 2))                                          /*!< Read/write color calibration limits                                                            \
+                                                                                */
+#define InputOffsetColorADRaw(p, nc) (80 + ((p) * 84) + 52 + ((nc) * 2))       /*!< Read AD raw color sensor values */
+#define InputOffsetColorSensorRaw(p, nc) (80 + ((p) * 84) + 60 + ((nc) * 2))   /*!< Read raw color sensor values */
 #define InputOffsetColorSensorValue(p, nc) (80 + ((p) * 84) + 68 + ((nc) * 2)) /*!< Read scaled color sensor values */
 #define InputOffsetColorBoolean(p, nc) (80 + ((p) * 84) + 76 + ((nc) * 2))     /*!< Read color sensor boolean values */
-#define InputOffsetColorCalibrationState(p) (80 + ((p) * 84) + 80) /*!< Read color sensor calibration state */
+#define InputOffsetColorCalibrationState(p) (80 + ((p) * 84) + 80)             /*!< Read color sensor calibration state */
 #endif
 /** @} */ // end of InputIOMap group
 /** @} */ // end of InputModuleConstants group
@@ -1332,8 +1333,8 @@ string StrCat(string str1, string str2, ...);
 #define UF_UPDATE_MODE 0x01        /*!< Commits changes to the \ref OutputModeField output property */
 #define UF_UPDATE_SPEED 0x02       /*!< Commits changes to the \ref PowerField output property */
 #define UF_UPDATE_TACHO_LIMIT 0x04 /*!< Commits changes to the \ref TachoLimitField output property */
-#define UF_UPDATE_RESET_COUNT                                                                                          \
-  0x08                                      /*!< Resets all rotation counters, cancels the current goal, and resets    \
+#define UF_UPDATE_RESET_COUNT                                                                                                                                                      \
+  0x08                                      /*!< Resets all rotation counters, cancels the current goal, and resets                                                                \
                                                the rotation error-correction system */
 #define UF_UPDATE_PID_VALUES 0x10           /*!< Commits changes to the PID motor regulation properties */
 #define UF_UPDATE_RESET_BLOCK_COUNT 0x20    /*!< Resets the NXT-G block-relative rotation counter */
@@ -1349,8 +1350,8 @@ string StrCat(string str1, string str2, ...);
  */
 #define RESET_NONE 0x00  /*!< No counters will be reset */
 #define RESET_COUNT 0x08 /*!< Reset the internal tachometer counter */
-#define RESET_BLOCK_COUNT                                                                                              \
-  0x20                            /*!< Reset the NXT-G block tachometer counter                                        \
+#define RESET_BLOCK_COUNT                                                                                                                                                          \
+  0x20                            /*!< Reset the NXT-G block tachometer counter                                                                                                    \
                                    */
 #define RESET_ROTATION_COUNT 0x40 /*!< Reset the rotation counter */
 #define RESET_BLOCKANDTACHO 0x28  /*!< Reset both the internal counter and the NXT-G block counter */
@@ -1379,11 +1380,11 @@ string StrCat(string str1, string str2, ...);
  * \sa SetOutput()
  * @{
  */
-#define OUT_OPTION_HOLDATLIMIT                                                                                         \
-  0x10 /*!< Option to have the firmware hold the motor when it reaches the                                             \
+#define OUT_OPTION_HOLDATLIMIT                                                                                                                                                     \
+  0x10 /*!< Option to have the firmware hold the motor when it reaches the                                                                                                         \
           tachometer limit */
-#define OUT_OPTION_RAMPDOWNTOLIMIT                                                                                     \
-  0x20    /*!< Option to have the firmware rampdown the motor power as it                                              \
+#define OUT_OPTION_RAMPDOWNTOLIMIT                                                                                                                                                 \
+  0x20    /*!< Option to have the firmware rampdown the motor power as it                                                                                                          \
              approaches the tachometer limit */
 /** @} */ // end of OutOptionConstants group
 
@@ -1403,12 +1404,12 @@ string StrCat(string str1, string str2, ...);
  * @{
  */
 #define OUT_RUNSTATE_IDLE 0x00 /*!< Disable all power to motors. */
-#define OUT_RUNSTATE_RAMPUP                                                                                            \
-  0x10                            /*!< Enable ramping up from a current power to a new (higher) power                  \
+#define OUT_RUNSTATE_RAMPUP                                                                                                                                                        \
+  0x10                            /*!< Enable ramping up from a current power to a new (higher) power                                                                              \
                                      over a specified \ref TachoLimitField goal. */
 #define OUT_RUNSTATE_RUNNING 0x20 /*!< Enable power to motors at the specified power level. */
-#define OUT_RUNSTATE_RAMPDOWN                                                                                          \
-  0x40                         /*!< Enable ramping down from a current power to a new (lower) power                    \
+#define OUT_RUNSTATE_RAMPDOWN                                                                                                                                                      \
+  0x40                         /*!< Enable ramping down from a current power to a new (lower) power                                                                                \
                                   over a specified \ref TachoLimitField goal. */
 #define OUT_RUNSTATE_HOLD 0x60 /*!< Set motor run state to hold at the current position. */
 /** @} */                      // end of OutRunStateConstants group
@@ -1600,58 +1601,55 @@ string StrCat(string str1, string str2, ...);
  * Constant offsets into the Output module IOMAP structure.
  * @{
  */
-#define OutputOffsetTachoCount(p)                                                                                      \
-  (((p) * 32) + 0) /*!< R  - Holds current number of counts, since last reset,                                         \
+#define OutputOffsetTachoCount(p)                                                                                                                                                  \
+  (((p) * 32) + 0) /*!< R  - Holds current number of counts, since last reset,                                                                                                     \
                       updated every 1 mS (4 bytes) slong */
-#define OutputOffsetBlockTachoCount(p)                                                                                 \
-  (((p) * 32) + 4) /*!< R  - Holds current number of counts for the current                                            \
+#define OutputOffsetBlockTachoCount(p)                                                                                                                                             \
+  (((p) * 32) + 4) /*!< R  - Holds current number of counts for the current                                                                                                        \
                       output block (4 bytes) slong */
-#define OutputOffsetRotationCount(p)                                                                                   \
-  (((p) * 32) + 8) /*!< R  - Holds current number of counts for the rotation                                           \
+#define OutputOffsetRotationCount(p)                                                                                                                                               \
+  (((p) * 32) + 8) /*!< R  - Holds current number of counts for the rotation                                                                                                       \
                       counter to the output (4 bytes) slong */
-#define OutputOffsetTachoLimit(p)                                                                                      \
-  (((p) * 32) + 12)                               /*!< RW - Holds number of counts to travel, 0 => Run                 \
+#define OutputOffsetTachoLimit(p)                                                                                                                                                  \
+  (((p) * 32) + 12)                               /*!< RW - Holds number of counts to travel, 0 => Run                                                                             \
                                                      forever (4 bytes) ulong */
 #define OutputOffsetMotorRPM(p) (((p) * 32) + 16) /*!< Not updated, will be removed later !! (2 bytes) sword */
-#define OutputOffsetFlags(p)                                                                                           \
-  (((p) * 32) + 18) /*!< RW - Holds flags for which data should be updated (1                                          \
+#define OutputOffsetFlags(p)                                                                                                                                                       \
+  (((p) * 32) + 18) /*!< RW - Holds flags for which data should be updated (1                                                                                                      \
                        byte) ubyte */
-#define OutputOffsetMode(p)                                                                                            \
-  (((p) * 32) + 19)                                  /*!< RW - Holds motor mode: Run, Break, regulated, ... (1         \
-                                                        byte) ubyte */
-#define OutputOffsetSpeed(p) (((p) * 32) + 20)       /*!< RW - Holds the wanted speed (1 byte) sbyte */
-#define OutputOffsetActualSpeed(p) (((p) * 32) + 21) /*!< R  - Holds the current motor speed (1 byte) sbyte */
-#define OutputOffsetRegPParameter(p)                                                                                   \
-  (((p) * 32) + 22) /*!< RW - Holds the P-constant used in the regulation (1 byte) ubyte */
-#define OutputOffsetRegIParameter(p)                                                                                   \
-  (((p) * 32) + 23) /*!< RW - Holds the I-constant used in the regulation (1 byte) ubyte */
-#define OutputOffsetRegDParameter(p)                                                                                   \
-  (((p) * 32) + 24) /*!< RW - Holds the D-constant used in the regulation (1 byte) ubyte */
-#define OutputOffsetRunState(p)                                                                                        \
-  (((p) * 32) + 25) /*!< RW - Holds the current motor run state in the output                                          \
+#define OutputOffsetMode(p)                                                                                                                                                        \
+  (((p) * 32) + 19)                                    /*!< RW - Holds motor mode: Run, Break, regulated, ... (1                                                                   \
+                                                          byte) ubyte */
+#define OutputOffsetSpeed(p) (((p) * 32) + 20)         /*!< RW - Holds the wanted speed (1 byte) sbyte */
+#define OutputOffsetActualSpeed(p) (((p) * 32) + 21)   /*!< R  - Holds the current motor speed (1 byte) sbyte */
+#define OutputOffsetRegPParameter(p) (((p) * 32) + 22) /*!< RW - Holds the P-constant used in the regulation (1 byte) ubyte */
+#define OutputOffsetRegIParameter(p) (((p) * 32) + 23) /*!< RW - Holds the I-constant used in the regulation (1 byte) ubyte */
+#define OutputOffsetRegDParameter(p) (((p) * 32) + 24) /*!< RW - Holds the D-constant used in the regulation (1 byte) ubyte */
+#define OutputOffsetRunState(p)                                                                                                                                                    \
+  (((p) * 32) + 25) /*!< RW - Holds the current motor run state in the output                                                                                                      \
                        module (1 byte) ubyte */
-#define OutputOffsetRegMode(p)                                                                                         \
-  (((p) * 32) + 26) /*!< RW - Tells which regulation mode should be used (1 byte) ubyte                                \
+#define OutputOffsetRegMode(p)                                                                                                                                                     \
+  (((p) * 32) + 26) /*!< RW - Tells which regulation mode should be used (1 byte) ubyte                                                                                            \
                      */
-#define OutputOffsetOverloaded(p)                                                                                      \
-  (((p) * 32) + 27) /*!< R  - True if the motor has been overloaded within                                             \
+#define OutputOffsetOverloaded(p)                                                                                                                                                  \
+  (((p) * 32) + 27) /*!< R  - True if the motor has been overloaded within                                                                                                         \
                        speed control regulation (1 byte) ubyte */
-#define OutputOffsetSyncTurnParameter(p)                                                                               \
-  (((p) * 32) + 28) /*!< RW - Holds the turning parameter need within                                                  \
+#define OutputOffsetSyncTurnParameter(p)                                                                                                                                           \
+  (((p) * 32) + 28) /*!< RW - Holds the turning parameter need within                                                                                                              \
                        MoveBlock (1 byte) sbyte */
 #if defined(__ENHANCED_FIRMWARE) && (__FIRMWARE_VERSION > 107)
-#define OutputOffsetOptions(p)                                                                                         \
-  (((p) * 32) + 29) /*!< RW - holds extra motor options related to the                                                 \
+#define OutputOffsetOptions(p)                                                                                                                                                     \
+  (((p) * 32) + 29) /*!< RW - holds extra motor options related to the                                                                                                             \
                        tachometer limit (1 byte) ubyte  (NBC/NXC) */
-#define OutputOffsetMaxSpeed(p)                                                                                        \
-  (((p) * 32) + 30) /*!< RW - holds the maximum speed for position regulation                                          \
+#define OutputOffsetMaxSpeed(p)                                                                                                                                                    \
+  (((p) * 32) + 30) /*!< RW - holds the maximum speed for position regulation                                                                                                      \
                        (1 byte) sbyte  (NBC/NXC) */
-#define OutputOffsetMaxAccel(p)                                                                                        \
-  (((p) * 32) + 31) /*!< RW - holds the maximum acceleration for position                                              \
+#define OutputOffsetMaxAccel(p)                                                                                                                                                    \
+  (((p) * 32) + 31) /*!< RW - holds the maximum acceleration for position                                                                                                          \
                        regulation (1 byte) sbyte  (NBC/NXC) */
 #endif
-#define OutputOffsetRegulationTime                                                                                     \
-  96 /*!< use for frequency of checking regulation mode (1 byte) ubyte                                                 \
+#define OutputOffsetRegulationTime                                                                                                                                                 \
+  96 /*!< use for frequency of checking regulation mode (1 byte) ubyte                                                                                                             \
         (NBC/NXC) */
 #if defined(__ENHANCED_FIRMWARE) && (__FIRMWARE_VERSION > 107)
 #define OutputOffsetRegulationOptions 97 /*!< use for position regulation options (1 byte) ubyte (NBC/NXC) */
@@ -1700,8 +1698,8 @@ string StrCat(string str1, string str2, ...);
  */
 #define LOWSPEED_TRANSMITTING 1 /*!< Lowspeed port is in transmitting mode */
 #define LOWSPEED_RECEIVING 2    /*!< Lowspeed port is in receiving mode */
-#define LOWSPEED_DATA_RECEIVED                                                                                         \
-  3       /*!< Lowspeed port is in data received mode                                                                  \
+#define LOWSPEED_DATA_RECEIVED                                                                                                                                                     \
+  3       /*!< Lowspeed port is in data received mode                                                                                                                              \
            */
 /** @} */ // end of LowSpeedModeConstants group
 
@@ -1720,25 +1718,23 @@ string StrCat(string str1, string str2, ...);
  * Constant offsets into the low speed module IOMAP structure.
  * @{
  */
-#define LowSpeedOffsetInBufBuf(p)                                                                                      \
-  (((p) * 19) + 0)                                    /*!< RW - Input buffer data buffer field offset (16 bytes)       \
+#define LowSpeedOffsetInBufBuf(p)                                                                                                                                                  \
+  (((p) * 19) + 0)                                    /*!< RW - Input buffer data buffer field offset (16 bytes)                                                                   \
                                                        */
 #define LowSpeedOffsetInBufInPtr(p) (((p) * 19) + 16) /*!< RW - Input buffer in pointer field offset (1 byte) */
-#define LowSpeedOffsetInBufOutPtr(p)                                                                                   \
-  (((p) * 19) + 17) /*!< RW - Input buffer out pointer field offset (1 byte)                                           \
-                     */
-#define LowSpeedOffsetInBufBytesToRx(p)                                                                                \
-  (((p) * 19) + 18) /*!< RW - Input buffer bytes to receive field offset (1 byte) */
+#define LowSpeedOffsetInBufOutPtr(p)                                                                                                                                               \
+  (((p) * 19) + 17)                                       /*!< RW - Input buffer out pointer field offset (1 byte)                                                                 \
+                                                           */
+#define LowSpeedOffsetInBufBytesToRx(p) (((p) * 19) + 18) /*!< RW - Input buffer bytes to receive field offset (1 byte) */
 
 #define LowSpeedOffsetOutBufBuf(p) (((p) * 19) + 76) /*!< RW - Output buffer data buffer field offset (16 bytes) */
-#define LowSpeedOffsetOutBufInPtr(p)                                                                                   \
-  (((p) * 19) + 92) /*!< RW - Output buffer in pointer field offset (1 byte)                                           \
+#define LowSpeedOffsetOutBufInPtr(p)                                                                                                                                               \
+  (((p) * 19) + 92) /*!< RW - Output buffer in pointer field offset (1 byte)                                                                                                       \
                      */
-#define LowSpeedOffsetOutBufOutPtr(p)                                                                                  \
-  (((p) * 19) + 93) /*!< RW - Output buffer out pointer field offset (1 byte)                                          \
-                     */
-#define LowSpeedOffsetOutBufBytesToRx(p)                                                                               \
-  (((p) * 19) + 94) /*!< RW - Output buffer bytes to receive field offset (1 byte) */
+#define LowSpeedOffsetOutBufOutPtr(p)                                                                                                                                              \
+  (((p) * 19) + 93)                                        /*!< RW - Output buffer out pointer field offset (1 byte)                                                               \
+                                                            */
+#define LowSpeedOffsetOutBufBytesToRx(p) (((p) * 19) + 94) /*!< RW - Output buffer bytes to receive field offset (1 byte) */
 
 #define LowSpeedOffsetMode(p) ((p) + 152)         /*!< R - Lowspeed port mode (1 byte) */
 #define LowSpeedOffsetChannelState(p) ((p) + 156) /*!< R - Lowspeed channgel state (1 byte) */
@@ -1748,8 +1744,8 @@ string StrCat(string str1, string str2, ...);
 #define LowSpeedOffsetSpeed 165 /*!< R - Lowspeed speed (unused) */
 
 #ifdef __ENHANCED_FIRMWARE
-#define LowSpeedOffsetNoRestartOnRead                                                                                  \
-  166 /*!< RW - Lowspeed option for no restart on read (all channels)                                                  \
+#define LowSpeedOffsetNoRestartOnRead                                                                                                                                              \
+  166 /*!< RW - Lowspeed option for no restart on read (all channels)                                                                                                              \
          (NBC/NXC) */
 #endif
 /** @} */ // end of LowSpeedIOMAP group
@@ -1798,8 +1794,8 @@ string StrCat(string str1, string str2, ...);
  */
 #define US_CMD_OFF 0x00        /*!< Command to turn off the ultrasonic sensor */
 #define US_CMD_SINGLESHOT 0x01 /*!< Command to put the ultrasonic sensor into single shot mode */
-#define US_CMD_CONTINUOUS                                                                                              \
-  0x02                           /*!< Command to put the ultrasonic sensor into continuous polling mode                \
+#define US_CMD_CONTINUOUS                                                                                                                                                          \
+  0x02                           /*!< Command to put the ultrasonic sensor into continuous polling mode                                                                            \
                                     (default) */
 #define US_CMD_EVENTCAPTURE 0x03 /*!< Command to put the ultrasonic sensor into event capture mode */
 #define US_CMD_WARMRESET 0x04    /*!< Command to warm reset the ultrasonic sensor */
@@ -1809,17 +1805,17 @@ string StrCat(string str1, string str2, ...);
 #define US_REG_SCALE_FACTOR 0x51  /*!< The register address used to store the scale factor value */
 #define US_REG_SCALE_DIVISOR 0x52 /*!< The register address used to store the scale divisor value */
 
-#define US_REG_FACTORY_ACTUAL_ZERO                                                                                     \
-  0x11 /*!< The register address containing the factory setting for the actual                                         \
+#define US_REG_FACTORY_ACTUAL_ZERO                                                                                                                                                 \
+  0x11 /*!< The register address containing the factory setting for the actual                                                                                                     \
           zero value */
-#define US_REG_FACTORY_SCALE_FACTOR                                                                                    \
-  0x12 /*!< The register address containing the factory setting for the scale                                          \
+#define US_REG_FACTORY_SCALE_FACTOR                                                                                                                                                \
+  0x12 /*!< The register address containing the factory setting for the scale                                                                                                      \
           factor value */
-#define US_REG_FACTORY_SCALE_DIVISOR                                                                                   \
-  0x13 /*!< The register address containing the factory setting for the scale                                          \
+#define US_REG_FACTORY_SCALE_DIVISOR                                                                                                                                               \
+  0x13 /*!< The register address containing the factory setting for the scale                                                                                                      \
           divisor value */
-#define US_REG_MEASUREMENT_UNITS                                                                                       \
-  0x14    /*!< The register address containing the measurement units (degrees C                                        \
+#define US_REG_MEASUREMENT_UNITS                                                                                                                                                   \
+  0x14    /*!< The register address containing the measurement units (degrees C                                                                                                    \
              or F) */
 /** @} */ // end of USI2CConstants group
 
@@ -1834,16 +1830,16 @@ string StrCat(string str1, string str2, ...);
 #define TEMP_RES_12BIT 0x60 /*!< Set the temperature conversion resolution to 12 bit */
 // SD (shutdown mode)
 #define TEMP_SD_CONTINUOUS 0x00 /*!< Set the sensor mode to continuous */
-#define TEMP_SD_SHUTDOWN                                                                                               \
-  0x01 /*!< Set the sensor mode to shutdown. The device will shut down after                                           \
+#define TEMP_SD_SHUTDOWN                                                                                                                                                           \
+  0x01 /*!< Set the sensor mode to shutdown. The device will shut down after                                                                                                       \
           the current conversion is completed. */
 // TM (thermostat mode)
 #define TEMP_TM_COMPARATOR 0x00 /*!< Set the thermostat mode to comparator */
 #define TEMP_TM_INTERRUPT 0x02  /*!< Set the thermostat mode to interrupt */
 // OS (one shot)
-#define TEMP_OS_ONESHOT                                                                                                \
-  0x80 /*!< Set the sensor into oneshot mode. When the device is in shutdown                                           \
-          mode this will start a single temperature conversion. The device                                             \
+#define TEMP_OS_ONESHOT                                                                                                                                                            \
+  0x80 /*!< Set the sensor into oneshot mode. When the device is in shutdown                                                                                                       \
+          mode this will start a single temperature conversion. The device                                                                                                         \
           returns to shutdown mode when it completes. */
 // F1/F0 (fault queue)
 #define TEMP_FQ_1 0x00 /*!< Set fault queue to 1 fault before alert */
@@ -1856,11 +1852,11 @@ string StrCat(string str1, string str2, ...);
 
 #define TEMP_REG_TEMP 0x00   /*!< The register where temperature values can be read */
 #define TEMP_REG_CONFIG 0x01 /*!< The register for reading/writing sensor configuration values */
-#define TEMP_REG_TLOW                                                                                                  \
-  0x02 /*!< The register for reading/writing a user-defined low temperature                                            \
+#define TEMP_REG_TLOW                                                                                                                                                              \
+  0x02 /*!< The register for reading/writing a user-defined low temperature                                                                                                        \
           limit */
-#define TEMP_REG_THIGH                                                                                                 \
-  0x03    /*!< The register for reading/writing a user-defined high temperature                                        \
+#define TEMP_REG_THIGH                                                                                                                                                             \
+  0x03    /*!< The register for reading/writing a user-defined high temperature                                                                                                    \
              limit */
 /** @} */ // end of TempI2CConstants group
 
@@ -1923,8 +1919,8 @@ string StrCat(string str1, string str2, ...);
  */
 #define DRAW_OPT_NORMAL (0x0000)             /*!< Normal drawing */
 #define DRAW_OPT_CLEAR_WHOLE_SCREEN (0x0001) /*!< Clear the entire screen before drawing */
-#define DRAW_OPT_CLEAR_EXCEPT_STATUS_SCREEN                                                                            \
-  (0x0002) /*!< Clear the screen except for the status line before drawing                                             \
+#define DRAW_OPT_CLEAR_EXCEPT_STATUS_SCREEN                                                                                                                                        \
+  (0x0002) /*!< Clear the screen except for the status line before drawing                                                                                                         \
             */
 
 #define DRAW_OPT_CLEAR_PIXELS (0x0004) /*!< Clear pixels while drawing (aka draw in white) */
@@ -1936,15 +1932,15 @@ string StrCat(string str1, string str2, ...);
 #define DRAW_OPT_LOGICAL_OR (0x0010)   /*!< Draw pixels using a logical OR operation */
 #define DRAW_OPT_LOGICAL_XOR (0x0018)  /*!< Draw pixels using a logical XOR operation */
 
-#define DRAW_OPT_FILL_SHAPE                                                                                            \
-  (0x0020) /*!< Fill the shape while drawing (rectangle, circle, ellipses, and                                         \
+#define DRAW_OPT_FILL_SHAPE                                                                                                                                                        \
+  (0x0020) /*!< Fill the shape while drawing (rectangle, circle, ellipses, and                                                                                                     \
               polygon) */
 
 #define DRAW_OPT_CLEAR_SCREEN_MODES (0x0003) /*!< Bit mask for the clear screen modes */
 #define DRAW_OPT_LOGICAL_OPERATIONS (0x0018) /*!< Bit mask for the logical drawing operations */
 
-#define DRAW_OPT_POLYGON_POLYLINE                                                                                      \
-  (0x0400) /*!< When drawing polygons, do not close (i.e., draw a polyline                                             \
+#define DRAW_OPT_POLYGON_POLYLINE                                                                                                                                                  \
+  (0x0400) /*!< When drawing polygons, do not close (i.e., draw a polyline                                                                                                         \
               instead) */
 
 /** @defgroup DisplayFontDrawOptionConstants Font drawing option constants
@@ -1955,16 +1951,16 @@ string StrCat(string str1, string str2, ...);
  */
 #define DRAW_OPT_FONT_DIRECTIONS (0x01C0) /*!< Bit mask for the font direction bits */
 
-#define DRAW_OPT_FONT_WRAP                                                                                             \
-  (0x0200) /*!< Option to have text wrap in \ref FontNumOut and \ref                                                   \
+#define DRAW_OPT_FONT_WRAP                                                                                                                                                         \
+  (0x0200) /*!< Option to have text wrap in \ref FontNumOut and \ref                                                                                                               \
               FontTextOut calls */
 
-#define DRAW_OPT_FONT_DIR_L2RB                                                                                         \
-  (0x0000)                              /*!< Font left to right bottom align                                           \
+#define DRAW_OPT_FONT_DIR_L2RB                                                                                                                                                     \
+  (0x0000)                              /*!< Font left to right bottom align                                                                                                       \
                                          */
 #define DRAW_OPT_FONT_DIR_L2RT (0x0040) /*!< Font left to right top align */
-#define DRAW_OPT_FONT_DIR_R2LB                                                                                         \
-  (0x0080)                              /*!< Font right to left bottom align                                           \
+#define DRAW_OPT_FONT_DIR_R2LB                                                                                                                                                     \
+  (0x0080)                              /*!< Font right to left bottom align                                                                                                       \
                                          */
 #define DRAW_OPT_FONT_DIR_R2LT (0x00C0) /*!< Font right to left top align */
 #define DRAW_OPT_FONT_DIR_B2TL (0x0100) /*!< Font bottom to top left align */
@@ -1997,8 +1993,8 @@ string StrCat(string str1, string str2, ...);
 /** @} */                             // end of DisplayContrastConstants group
 #endif
 
-#define SCREEN_MODE_RESTORE                                                                                            \
-  0x00                         /*!< Restore the screen \sa SetScreenMode()                                             \
+#define SCREEN_MODE_RESTORE                                                                                                                                                        \
+  0x00                         /*!< Restore the screen \sa SetScreenMode()                                                                                                         \
                                 */
 #define SCREEN_MODE_CLEAR 0x01 /*!< Clear the screen \sa SetScreenMode() */
 
@@ -2083,14 +2079,14 @@ string StrCat(string str1, string str2, ...);
 #define DisplayOffsetPBitmaps(p) (((p) * 4) + 68)   /*!< Pointer to free bitmap files */
 #define DisplayOffsetPMenuText 84                   /*!< Pointer to menu icon text (NULL == none) */
 #define DisplayOffsetPMenuIcons(p) (((p) * 4) + 88) /*!< Pointer to menu icon images (NULL == none) */
-#define DisplayOffsetPStepIcons                                                                                        \
-  100                                           /*!< Pointer to step icon collection file                              \
-                                                 */
-#define DisplayOffsetDisplay 104                /*!< Display content copied to physical display every 17 mS */
-#define DisplayOffsetStatusIcons(p) ((p) + 108) /*!< Index in status icon collection file (index = 0 -> none) */
-#define DisplayOffsetStepIcons(p) ((p) + 112)   /*!< Index in step icon collection file (index = 0 -> none) */
-#define DisplayOffsetFlags 117                  /*!< Update flags enumerated above */
-#define DisplayOffsetTextLinesCenterFlags 118   /*!< Mask to center TextLines */
+#define DisplayOffsetPStepIcons                                                                                                                                                    \
+  100                                                       /*!< Pointer to step icon collection file                                                                              \
+                                                             */
+#define DisplayOffsetDisplay 104                            /*!< Display content copied to physical display every 17 mS */
+#define DisplayOffsetStatusIcons(p) ((p) + 108)             /*!< Index in status icon collection file (index = 0 -> none) */
+#define DisplayOffsetStepIcons(p) ((p) + 112)               /*!< Index in step icon collection file (index = 0 -> none) */
+#define DisplayOffsetFlags 117                              /*!< Update flags enumerated above */
+#define DisplayOffsetTextLinesCenterFlags 118               /*!< Mask to center TextLines */
 #define DisplayOffsetNormal(l, w) (((l) * 100) + (w) + 119) /*!< Raw display memory for normal screen */
 #define DisplayOffsetPopup(l, w) (((l) * 100) + (w) + 919)  /*!< Raw display memory for popup screen */
 
@@ -2120,8 +2116,8 @@ string StrCat(string str1, string str2, ...);
 
 #define BT_CMD_BYTE 1              /*!< Size of Bluetooth command*/
 #define SIZE_OF_BT_DEVICE_TABLE 30 /*!< Size of Bluetooth device table */
-#define SIZE_OF_BT_CONNECT_TABLE                                                                                       \
-  4                               /*!< Size of Bluetooth connection table -- Index 0 is always incoming                \
+#define SIZE_OF_BT_CONNECT_TABLE                                                                                                                                                   \
+  4                               /*!< Size of Bluetooth connection table -- Index 0 is always incoming                                                                            \
                                      connection */
 #define SIZE_OF_BT_NAME 16        /*!< Size of Bluetooth name */
 #define SIZE_OF_BRICK_NAME 8      /*!< Size of NXT Brick name */
@@ -2293,12 +2289,10 @@ string StrCat(string str1, string str2, ...);
  * Constants that combine data bits, parity, and stop bits into a single value.
  * @{
  */
-#define HS_MODE_8N1                                                                                                    \
-  (HS_MODE_8_DATA | HS_MODE_N_PARITY | HS_MODE_10_STOP) /*!< HsMode 8 data bits, no parity, 1 stop bit */
-#define HS_MODE_7E1                                                                                                    \
-  (HS_MODE_7_DATA | HS_MODE_E_PARITY | HS_MODE_10_STOP) /*!< HsMode 7 data bits, even parity, 1 stop bit */
-/** @} */                                               // end of CommHiSpeedCombinedConstants group
-/** @} */                                               // end of CommHiSpeedModeConstants group
+#define HS_MODE_8N1 (HS_MODE_8_DATA | HS_MODE_N_PARITY | HS_MODE_10_STOP) /*!< HsMode 8 data bits, no parity, 1 stop bit */
+#define HS_MODE_7E1 (HS_MODE_7_DATA | HS_MODE_E_PARITY | HS_MODE_10_STOP) /*!< HsMode 7 data bits, even parity, 1 stop bit */
+/** @} */                                                                 // end of CommHiSpeedCombinedConstants group
+/** @} */                                                                 // end of CommHiSpeedModeConstants group
 
 /** @defgroup CommHiSpeedAddressConstants Hi-speed port address constants
  * Constants that are used to specify the Hi-speed (RS-485) port device address.
@@ -2342,15 +2336,15 @@ string StrCat(string str1, string str2, ...);
 #define INTF_CONNECT 3       /*!< Connect to one of the known devices */
 #define INTF_DISCONNECT 4    /*!< Disconnect from one of the connected devices */
 #define INTF_DISCONNECTALL 5 /*!< Disconnect all devices */
-#define INTF_REMOVEDEVICE                                                                                              \
-  6                       /*!< Remove a device from the known devices table                                            \
+#define INTF_REMOVEDEVICE                                                                                                                                                          \
+  6                       /*!< Remove a device from the known devices table                                                                                                        \
                            */
 #define INTF_VISIBILITY 7 /*!< Set the bluetooth visibility on or off */
 #define INTF_SETCMDMODE 8 /*!< Set bluetooth into command mode */
 #define INTF_OPENSTREAM 9 /*!< Open a bluetooth stream */
 #define INTF_SENDDATA 10  /*!< Send data over a bluetooth connection */
-#define INTF_FACTORYRESET                                                                                              \
-  11                       /*!< Reset bluetooth settings to factory values                                             \
+#define INTF_FACTORYRESET                                                                                                                                                          \
+  11                       /*!< Reset bluetooth settings to factory values                                                                                                         \
                             */
 #define INTF_BTON 12       /*!< Turn on the bluetooth radio */
 #define INTF_BTOFF 13      /*!< Turn off the bluetooth radio */
@@ -2386,36 +2380,30 @@ string StrCat(string str1, string str2, ...);
 #define CommOffsetPFunc 0    /*!< Offset to the Comm module first function pointer (4 bytes) */
 #define CommOffsetPFuncTwo 4 /*!< Offset to the Comm module second function pointer (4 bytes) */
 // BtDeviceTable[30] (930 bytes)
-#define CommOffsetBtDeviceTableName(p) (((p) * 31) + 8) /*!< Offset to BT device table name (16 bytes) */
-#define CommOffsetBtDeviceTableClassOfDevice(p)                                                                        \
-  (((p) * 31) + 24) /*!< Offset to Bluetooth device table device class (4 bytes) */
-#define CommOffsetBtDeviceTableBdAddr(p) (((p) * 31) + 28) /*!< Offset to Bluetooth device table address (7 bytes) */
-#define CommOffsetBtDeviceTableDeviceStatus(p)                                                                         \
-  (((p) * 31) + 35) /*!< Offset to Bluetooth device table status (1 byte) */
+#define CommOffsetBtDeviceTableName(p) (((p) * 31) + 8)           /*!< Offset to BT device table name (16 bytes) */
+#define CommOffsetBtDeviceTableClassOfDevice(p) (((p) * 31) + 24) /*!< Offset to Bluetooth device table device class (4 bytes) */
+#define CommOffsetBtDeviceTableBdAddr(p) (((p) * 31) + 28)        /*!< Offset to Bluetooth device table address (7 bytes) */
+#define CommOffsetBtDeviceTableDeviceStatus(p) (((p) * 31) + 35)  /*!< Offset to Bluetooth device table status (1 byte) */
 //  BDCONNECTTABLE BtConnectTable[4]; (188 bytes)
-#define CommOffsetBtConnectTableName(p) (((p) * 47) + 938) /*!< Offset to Bluetooth connect table name (16 bytes) */
-#define CommOffsetBtConnectTableClassOfDevice(p)                                                                       \
-  (((p) * 47) + 954) /*!< Offset to Bluetooth connect table device class (4 bytes) */
-#define CommOffsetBtConnectTablePinCode(p)                                                                             \
-  (((p) * 47) + 958) /*!< Offset to Bluetooth connect table pin code (16 bytes) */
-#define CommOffsetBtConnectTableBdAddr(p)                                                                              \
-  (((p) * 47) + 974) /*!< Offset to Bluetooth connect table address (7 bytes)                                          \
+#define CommOffsetBtConnectTableName(p) (((p) * 47) + 938)          /*!< Offset to Bluetooth connect table name (16 bytes) */
+#define CommOffsetBtConnectTableClassOfDevice(p) (((p) * 47) + 954) /*!< Offset to Bluetooth connect table device class (4 bytes) */
+#define CommOffsetBtConnectTablePinCode(p) (((p) * 47) + 958)       /*!< Offset to Bluetooth connect table pin code (16 bytes) */
+#define CommOffsetBtConnectTableBdAddr(p)                                                                                                                                          \
+  (((p) * 47) + 974) /*!< Offset to Bluetooth connect table address (7 bytes)                                                                                                      \
                       */
-#define CommOffsetBtConnectTableHandleNr(p)                                                                            \
-  (((p) * 47) + 981) /*!< Offset to Bluetooth connect table handle (1 byte)                                            \
-                      */
-#define CommOffsetBtConnectTableStreamStatus(p)                                                                        \
-  (((p) * 47) + 982) /*!< Offset to Bluetooth connect table stream status (1 byte) */
-#define CommOffsetBtConnectTableLinkQuality(p)                                                                         \
-  (((p) * 47) + 983) /*!< Offset to Bluetooth connect table link quality (1 byte) */
+#define CommOffsetBtConnectTableHandleNr(p)                                                                                                                                        \
+  (((p) * 47) + 981)                                               /*!< Offset to Bluetooth connect table handle (1 byte)                                                          \
+                                                                    */
+#define CommOffsetBtConnectTableStreamStatus(p) (((p) * 47) + 982) /*!< Offset to Bluetooth connect table stream status (1 byte) */
+#define CommOffsetBtConnectTableLinkQuality(p) (((p) * 47) + 983)  /*!< Offset to Bluetooth connect table link quality (1 byte) */
 // General brick data
 //   BRICKDATA      BrickData; (31 bytes)
 #define CommOffsetBrickDataName 1126            /*!< Offset to brick name (16 bytes) */
 #define CommOffsetBrickDataBluecoreVersion 1142 /*!< Offset to Bluecore version (2 bytes) */
 #define CommOffsetBrickDataBdAddr 1144          /*!< Offset to Bluetooth address (7 bytes) */
 #define CommOffsetBrickDataBtStateStatus 1151   /*!< Offset to BtStateStatus (1 byte) */
-#define CommOffsetBrickDataBtHwStatus                                                                                  \
-  1152                                       /*!< Offset to BtHwStatus (1 byte)                                        \
+#define CommOffsetBrickDataBtHwStatus                                                                                                                                              \
+  1152                                       /*!< Offset to BtHwStatus (1 byte)                                                                                                    \
                                               */
 #define CommOffsetBrickDataTimeOutValue 1153 /*!< Offset to data timeout value (1 byte) */
 //  BTBUF          BtInBuf; (132 bytes)
@@ -2457,8 +2445,8 @@ string StrCat(string str1, string str2, ...);
 #define CommOffsetUsbState 1894        /*!< Offset to Usb State (1 byte) */
 #ifdef __ENHANCED_FIRMWARE
 #define CommOffsetHsMode 1896 /*!< Offset to High Speed mode (2 bytes) */
-#define CommOffsetBtDataMode                                                                                           \
-  1898                            /*!< Offset to Bluetooth data mode (1 byte)                                          \
+#define CommOffsetBtDataMode                                                                                                                                                       \
+  1898                            /*!< Offset to Bluetooth data mode (1 byte)                                                                                                      \
                                    */
 #define CommOffsetHsDataMode 1899 /*!< Offset to High Speed data mode (1 byte) */
 #endif
@@ -2519,8 +2507,8 @@ string StrCat(string str1, string str2, ...);
  * Constants for use when simulating RCX IR remote messages.
  * @{
  */
-#define RCX_RemoteKeysReleased                                                                                         \
-  0x0000                              /*!< All remote keys have been released                                          \
+#define RCX_RemoteKeysReleased                                                                                                                                                     \
+  0x0000                              /*!< All remote keys have been released                                                                                                      \
                                        */
 #define RCX_RemotePBMessage1 0x0100   /*!< Send PB message 1 */
 #define RCX_RemotePBMessage2 0x0200   /*!< Send PB message 2 */
@@ -2572,17 +2560,17 @@ string StrCat(string str1, string str2, ...);
 #define SCOUT_SOUND_ENTERSA 7  /*!< Play the Scout enter standalone sound */
 #define SCOUT_SOUND_KEYERROR 8 /*!< Play the Scout key error sound */
 #define SCOUT_SOUND_NONE 9     /*!< Play the Scout none sound */
-#define SCOUT_SOUND_TOUCH1_PRES                                                                                        \
-  10 /*!< Play the Scout touch 1 pressed sound                                                                         \
+#define SCOUT_SOUND_TOUCH1_PRES                                                                                                                                                    \
+  10 /*!< Play the Scout touch 1 pressed sound                                                                                                                                     \
       */
-#define SCOUT_SOUND_TOUCH1_REL                                                                                         \
-  11 /*!< Play the Scout touch 1 released sound                                                                        \
+#define SCOUT_SOUND_TOUCH1_REL                                                                                                                                                     \
+  11 /*!< Play the Scout touch 1 released sound                                                                                                                                    \
       */
-#define SCOUT_SOUND_TOUCH2_PRES                                                                                        \
-  12 /*!< Play the Scout touch 2 pressed sound                                                                         \
+#define SCOUT_SOUND_TOUCH2_PRES                                                                                                                                                    \
+  12 /*!< Play the Scout touch 2 pressed sound                                                                                                                                     \
       */
-#define SCOUT_SOUND_TOUCH2_REL                                                                                         \
-  13                                /*!< Play the Scout touch 2 released sound                                         \
+#define SCOUT_SOUND_TOUCH2_REL                                                                                                                                                     \
+  13                                /*!< Play the Scout touch 2 released sound                                                                                                     \
                                      */
 #define SCOUT_SOUND_ENTER_BRIGHT 14 /*!< Play the Scout enter bright sound */
 #define SCOUT_SOUND_ENTER_NORMAL 15 /*!< Play the Scout enter normal sound */
@@ -2594,8 +2582,8 @@ string StrCat(string str1, string str2, ...);
 #define SCOUT_SOUND_TIMER1 21       /*!< Play the Scout timer 1 sound */
 #define SCOUT_SOUND_TIMER2 22       /*!< Play the Scout timer 2 sound */
 #define SCOUT_SOUND_TIMER3 23       /*!< Play the Scout timer 3 sound */
-#define SCOUT_SOUND_MAIL_RECEIVED                                                                                      \
-  24                            /*!< Play the Scout mail received sound                                                \
+#define SCOUT_SOUND_MAIL_RECEIVED                                                                                                                                                  \
+  24                            /*!< Play the Scout mail received sound                                                                                                            \
                                  */
 #define SCOUT_SOUND_SPECIAL1 25 /*!< Play the Scout special 1 sound */
 #define SCOUT_SOUND_SPECIAL2 26 /*!< Play the Scout special 2 sound */
@@ -2717,15 +2705,15 @@ string StrCat(string str1, string str2, ...);
 #define RCX_FirmwareVersionSrc 35    /*!< The RCX firmware version source */
 #define RCX_IndirectVarSrc 36        /*!< The RCX indirect variable source */
 #define RCX_DatalogSrcIndirectSrc 37 /*!< The RCX indirect datalog source source */
-#define RCX_DatalogSrcDirectSrc                                                                                        \
-  38                                   /*!< The RCX direct datalog source source                                       \
+#define RCX_DatalogSrcDirectSrc                                                                                                                                                    \
+  38                                   /*!< The RCX direct datalog source source                                                                                                   \
                                         */
 #define RCX_DatalogValueIndirectSrc 39 /*!< The RCX indirect datalog value source */
-#define RCX_DatalogValueDirectSrc                                                                                      \
-  40 /*!< The RCX direct datalog value source                                                                          \
+#define RCX_DatalogValueDirectSrc                                                                                                                                                  \
+  40 /*!< The RCX direct datalog value source                                                                                                                                      \
       */
-#define RCX_DatalogRawIndirectSrc                                                                                      \
-  41                               /*!< The RCX indirect datalog raw source                                            \
+#define RCX_DatalogRawIndirectSrc                                                                                                                                                  \
+  41                               /*!< The RCX indirect datalog raw source                                                                                                        \
                                     */
 #define RCX_DatalogRawDirectSrc 42 /*!< The RCX direct datalog raw source */
 /** @} */                          // end of RCXSourceConstants group
@@ -2995,8 +2983,8 @@ string StrCat(string str1, string str2, ...);
  * @{
  */
 #define HT_CMD_COLOR2_ACTIVE 0x00 /*!< Set the Color2 sensor to active mode */
-#define HT_CMD_COLOR2_PASSIVE                                                                                          \
-  0x01                           /*!< Set the Color2 sensor to passive mode                                            \
+#define HT_CMD_COLOR2_PASSIVE                                                                                                                                                      \
+  0x01                           /*!< Set the Color2 sensor to passive mode                                                                                                        \
                                   */
 #define HT_CMD_COLOR2_RAW 0x03   /*!< Set the Color2 sensor to raw mode */
 #define HT_CMD_COLOR2_50HZ 0x35  /*!< Set the Color2 sensor to 50Hz mode */
@@ -3004,11 +2992,11 @@ string StrCat(string str1, string str2, ...);
 #define HT_CMD_COLOR2_BLCAL 0x42 /*!< Set the Color2 sensor to black level calibration mode */
 #define HT_CMD_COLOR2_WBCAL 0x43 /*!< Set the Color2 sensor to white level calibration mode */
 #define HT_CMD_COLOR2_FAR 0x46   /*!< Set the Color2 sensor to far mode */
-#define HT_CMD_COLOR2_LED_HI                                                                                           \
-  0x48 /*!< Set the Color2 sensor to LED high mode                                                                     \
+#define HT_CMD_COLOR2_LED_HI                                                                                                                                                       \
+  0x48 /*!< Set the Color2 sensor to LED high mode                                                                                                                                 \
         */
-#define HT_CMD_COLOR2_LED_LOW                                                                                          \
-  0x4C                          /*!< Set the Color2 sensor to LED low mode                                             \
+#define HT_CMD_COLOR2_LED_LOW                                                                                                                                                      \
+  0x4C                          /*!< Set the Color2 sensor to LED low mode                                                                                                         \
                                  */
 #define HT_CMD_COLOR2_NEAR 0x4E /*!< Set the Color2 sensor to near mode */
 /** @} */                       // end of HTColor2Constants group
@@ -3200,12 +3188,12 @@ string StrCat(string str1, string str2, ...);
 #define PFMATE_REG_CMD 0x41     /*!< PFMate command */
 #define PFMATE_REG_CHANNEL 0x42 /*!< PF channel? 1, 2, 3, or 4 */
 #define PFMATE_REG_MOTORS 0x43  /*!< PF motors? (0 = both, 1 = A, 2 = B) */
-#define PFMATE_REG_A_CMD                                                                                               \
-  0x44                          /*!< PF command for motor A? (PF_CMD_FLOAT, PF_CMD_FWD, PF_CMD_REV,                    \
+#define PFMATE_REG_A_CMD                                                                                                                                                           \
+  0x44                          /*!< PF command for motor A? (PF_CMD_FLOAT, PF_CMD_FWD, PF_CMD_REV,                                                                                \
                                    PF_CMD_BRAKE) */
 #define PFMATE_REG_A_SPEED 0x45 /*!< PF speed for motor A? (0-7) */
-#define PFMATE_REG_B_CMD                                                                                               \
-  0x46                          /*!< PF command for motor B? (PF_CMD_FLOAT, PF_CMD_FWD, PF_CMD_REV,                    \
+#define PFMATE_REG_B_CMD                                                                                                                                                           \
+  0x46                          /*!< PF command for motor B? (PF_CMD_FLOAT, PF_CMD_FWD, PF_CMD_REV,                                                                                \
                                    PF_CMD_BRAKE) */
 #define PFMATE_REG_B_SPEED 0x47 /*!< PF speed for motor B? (0-7) */
 
@@ -3241,11 +3229,11 @@ string StrCat(string str1, string str2, ...);
  * NXTServo device register constants.
  * @{
  */
-#define NXTSERVO_REG_VOLTAGE                                                                                           \
-  0x41 /*!< Battery voltage register. (read only)                                                                      \
+#define NXTSERVO_REG_VOLTAGE                                                                                                                                                       \
+  0x41 /*!< Battery voltage register. (read only)                                                                                                                                  \
         */
-#define NXTSERVO_REG_CMD                                                                                               \
-  0x41 /*!< NXTServo command register.  See \ref NXTServoCommands group.                                               \
+#define NXTSERVO_REG_CMD                                                                                                                                                           \
+  0x41 /*!< NXTServo command register.  See \ref NXTServoCommands group.                                                                                                           \
           (write only) */
 // position registers (2 bytes little endian)
 #define NXTSERVO_REG_S1_POS 0x42 /*!< NXTServo servo 1 position register. */
@@ -3295,8 +3283,8 @@ string StrCat(string str1, string str2, ...);
  */
 #define NXTSERVO_QPOS_CENTER 150 /*!< Center quick position for 1500us servos. */
 #define NXTSERVO_QPOS_MIN 50     /*!< Minimum quick position for 1500us servos. */
-#define NXTSERVO_QPOS_MAX                                                                                              \
-  250     /*!< Maximum quick position for 1500us servos.                                                               \
+#define NXTSERVO_QPOS_MAX                                                                                                                                                          \
+  250     /*!< Maximum quick position for 1500us servos.                                                                                                                           \
            */
 /** @} */ // end of NXTServoQPos group
 
@@ -3319,23 +3307,23 @@ string StrCat(string str1, string str2, ...);
  * to control the device.
  * @{
  */
-#define NXTSERVO_CMD_INIT                                                                                              \
-  0x49 /*!< Store the initial speed and position properties of the servo motor                                         \
-          'n'. Current speed and position values of the nth servo is read from                                         \
-          the servo speed register and servo position register and written to                                          \
+#define NXTSERVO_CMD_INIT                                                                                                                                                          \
+  0x49 /*!< Store the initial speed and position properties of the servo motor                                                                                                     \
+          'n'. Current speed and position values of the nth servo is read from                                                                                                     \
+          the servo speed register and servo position register and written to                                                                                                      \
           permanent memory. */
-#define NXTSERVO_CMD_RESET                                                                                             \
-  0x53                         /*!< Reset servo properties to factory default.  Initial Position of                    \
+#define NXTSERVO_CMD_RESET                                                                                                                                                         \
+  0x53                         /*!< Reset servo properties to factory default.  Initial Position of                                                                                \
                                   servos to 1500, and speed to 0. */
 #define NXTSERVO_CMD_HALT 0x48 /*!< Halt Macro. This command re-initializes the macro environment. */
-#define NXTSERVO_CMD_RESUME                                                                                            \
-  0x52 /*!< Resume macro Execution. This command resumes macro where it was                                            \
+#define NXTSERVO_CMD_RESUME                                                                                                                                                        \
+  0x52 /*!< Resume macro Execution. This command resumes macro where it was                                                                                                        \
           paused last, using the same environment. */
-#define NXTSERVO_CMD_GOTO                                                                                              \
-  0x47 /*!< Goto EEPROM position x. This command re-initializes the macro                                              \
+#define NXTSERVO_CMD_GOTO                                                                                                                                                          \
+  0x47 /*!< Goto EEPROM position x. This command re-initializes the macro                                                                                                          \
           environment. */
-#define NXTSERVO_CMD_PAUSE                                                                                             \
-  0x50                            /*!< Pause Macro. This command will pause the macro, and save the                    \
+#define NXTSERVO_CMD_PAUSE                                                                                                                                                         \
+  0x50                            /*!< Pause Macro. This command will pause the macro, and save the                                                                                \
                                      environment for subsequent resumption. */
 #define NXTSERVO_CMD_EDIT1 0x45   /*!< Edit Macro (part 1 of 2 character command sequence) */
 #define NXTSERVO_CMD_EDIT2 0x4D   /*!< Edit Macro (part 2 of 2 character command sequence) */
@@ -3376,8 +3364,8 @@ string StrCat(string str1, string str2, ...);
  * to control the device.
  * @{
  */
-#define NXTHID_CMD_ASCII                                                                                               \
-  0x41                           /*!< Use ASCII data mode. In ASCII mode no non-printable characters can               \
+#define NXTHID_CMD_ASCII                                                                                                                                                           \
+  0x41                           /*!< Use ASCII data mode. In ASCII mode no non-printable characters can                                                                           \
                                     be sent. */
 #define NXTHID_CMD_DIRECT 0x44   /*!< Use direct data mode In direct mode any character can be sent. */
 #define NXTHID_CMD_TRANSMIT 0x54 /*!< Transmit data to the host computer. */
@@ -3392,25 +3380,25 @@ string StrCat(string str1, string str2, ...);
  * NXTPowerMeter device register constants.
  * @{
  */
-#define NXTPM_REG_CMD                                                                                                  \
-  0x41                         /*!< NXTPowerMeter command register.  See the \ref                                      \
+#define NXTPM_REG_CMD                                                                                                                                                              \
+  0x41                         /*!< NXTPowerMeter command register.  See the \ref                                                                                                  \
                                   NXTPowerMeterCommands group. */
 #define NXTPM_REG_CURRENT 0x42 /*!< NXTPowerMeter present current in mA register. (2 bytes) */
 #define NXTPM_REG_VOLTAGE 0x44 /*!< NXTPowerMeter present voltage in mV register. (2 bytes) */
-#define NXTPM_REG_CAPACITY                                                                                             \
-  0x46                       /*!< NXTPowerMeter capacity used since last reset register. (2 bytes)                     \
+#define NXTPM_REG_CAPACITY                                                                                                                                                         \
+  0x46                       /*!< NXTPowerMeter capacity used since last reset register. (2 bytes)                                                                                 \
                               */
 #define NXTPM_REG_POWER 0x48 /*!< NXTPowerMeter present power register. (2 bytes) */
-#define NXTPM_REG_TOTALPOWER                                                                                           \
-  0x4A                            /*!< NXTPowerMeter total power consumed since last reset register. (4                \
+#define NXTPM_REG_TOTALPOWER                                                                                                                                                       \
+  0x4A                            /*!< NXTPowerMeter total power consumed since last reset register. (4                                                                            \
                                      bytes) */
 #define NXTPM_REG_MAXCURRENT 0x4E /*!< NXTPowerMeter max current register. (2 bytes) */
 #define NXTPM_REG_MINCURRENT 0x50 /*!< NXTPowerMeter min current register. (2 bytes) */
 #define NXTPM_REG_MAXVOLTAGE 0x52 /*!< NXTPowerMeter max voltage register. (2 bytes) */
 #define NXTPM_REG_MINVOLTAGE 0x54 /*!< NXTPowerMeter min voltage register. (2 bytes) */
 #define NXTPM_REG_TIME 0x56       /*!< NXTPowerMeter time register. (4 bytes) */
-#define NXTPM_REG_USERGAIN                                                                                             \
-  0x5A                            /*!< NXTPowerMeter user gain register. Not yet implemented. (4 bytes)                \
+#define NXTPM_REG_USERGAIN                                                                                                                                                         \
+  0x5A                            /*!< NXTPowerMeter user gain register. Not yet implemented. (4 bytes)                                                                            \
                                    */
 #define NXTPM_REG_GAIN 0x5E       /*!< NXTPowerMeter gain register. (1 byte) */
 #define NXTPM_REG_ERRORCOUNT 0x5F /*!< NXTPowerMeter error count register. (2 bytes) */
@@ -3443,14 +3431,14 @@ string StrCat(string str1, string str2, ...);
  * NXTLineLeader device register constants.
  * @{
  */
-#define NXTLL_REG_CMD                                                                                                  \
-  0x41                          /*!< NXTLineLeader command register.  See the \ref                                     \
+#define NXTLL_REG_CMD                                                                                                                                                              \
+  0x41                          /*!< NXTLineLeader command register.  See the \ref                                                                                                 \
                                    NXTLineLeaderCommands group. */
 #define NXTLL_REG_STEERING 0x42 /*!< NXTLineLeader steering register. */
 #define NXTLL_REG_AVERAGE 0x43  /*!< NXTLineLeader average result register. */
 #define NXTLL_REG_RESULT 0x44   /*!< NXTLineLeader result register (sensor bit values). */
-#define NXTLL_REG_SETPOINT                                                                                             \
-  0x45                             /*!< NXTLineLeader user settable average (setpoint) register. Default               \
+#define NXTLL_REG_SETPOINT                                                                                                                                                         \
+  0x45                             /*!< NXTLineLeader user settable average (setpoint) register. Default                                                                           \
                                       = 45. */
 #define NXTLL_REG_KP_VALUE 0x46    /*!< NXTLineLeader Kp value register. Default = 25. */
 #define NXTLL_REG_KI_VALUE 0x47    /*!< NXTLineLeader Ki value register. Default = 0. */
@@ -3478,11 +3466,11 @@ string StrCat(string str1, string str2, ...);
 #define NXTLL_CMD_INVERT 0x49    /*!< Invert color. */
 #define NXTLL_CMD_POWERUP 0x50   /*!< Power up the device. */
 #define NXTLL_CMD_RESET 0x52     /*!< Reset inversion. */
-#define NXTLL_CMD_SNAPSHOT                                                                                             \
-  0x53 /*!< Setpoint based on snapshot (automatically sets invert if needed).                                          \
+#define NXTLL_CMD_SNAPSHOT                                                                                                                                                         \
+  0x53 /*!< Setpoint based on snapshot (automatically sets invert if needed).                                                                                                      \
         */
-#define NXTLL_CMD_UNIVERSAL                                                                                            \
-  0x55                       /*!< Universal power frequency. The sensor auto adjusts for any                           \
+#define NXTLL_CMD_UNIVERSAL                                                                                                                                                        \
+  0x55                       /*!< Universal power frequency. The sensor auto adjusts for any                                                                                       \
                                 frequency. This is the default mode. */
 #define NXTLL_CMD_WHITE 0x57 /*!< White balance calibration. */
 /** @} */                    // end of NXTLineLeaderCommands group
@@ -3547,8 +3535,7 @@ string StrCat(string str1, string str2, ...);
  * \param _Width The total RIC width.
  * \param _Height The total RIC height.
  */
-#define RICOpDescription(_Options, _Width, _Height)                                                                    \
-  8, 0, 0, 0, (_Options) & 0xFF, (_Options) >> 8, (_Width) & 0xFF, (_Width) >> 8, (_Height) & 0xFF, (_Height) >> 8
+#define RICOpDescription(_Options, _Width, _Height) 8, 0, 0, 0, (_Options) & 0xFF, (_Options) >> 8, (_Width) & 0xFF, (_Width) >> 8, (_Height) & 0xFF, (_Height) >> 8
 
 /**
  * Output an RIC CopyBits opcode
@@ -3560,7 +3547,7 @@ string StrCat(string str1, string str2, ...);
  * \param _DstPoint The LCD coordinate to which to copy the data.  See \ref
  * RICImgPoint.
  */
-#define RICOpCopyBits(_CopyOptions, _DataAddr, _SrcRect, _DstPoint)                                                    \
+#define RICOpCopyBits(_CopyOptions, _DataAddr, _SrcRect, _DstPoint)                                                                                                                \
   18, 0, 3, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, (_DataAddr) & 0xFF, (_DataAddr) >> 8, _SrcRect, _DstPoint
 
 /**
@@ -3569,8 +3556,7 @@ string StrCat(string str1, string str2, ...);
  * \param _Point The pixel coordinate. See \ref RICImgPoint.
  * \param _Value The pixel value (unused).
  */
-#define RICOpPixel(_CopyOptions, _Point, _Value)                                                                       \
-  10, 0, 4, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_Value) & 0xFF, (_Value) >> 8
+#define RICOpPixel(_CopyOptions, _Point, _Value) 10, 0, 4, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_Value) & 0xFF, (_Value) >> 8
 
 /**
  * Output an RIC Line opcode
@@ -3578,8 +3564,7 @@ string StrCat(string str1, string str2, ...);
  * \param _Point1 The starting point of the line.  See \ref RICImgPoint.
  * \param _Point2 The ending point of the line.  See \ref RICImgPoint.
  */
-#define RICOpLine(_CopyOptions, _Point1, _Point2)                                                                      \
-  12, 0, 5, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point1, _Point2
+#define RICOpLine(_CopyOptions, _Point1, _Point2) 12, 0, 5, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point1, _Point2
 
 /**
  * Output an RIC Rect opcode
@@ -3588,9 +3573,8 @@ string StrCat(string str1, string str2, ...);
  * \param _Width The rectangle's width.
  * \param _Height The rectangle's height.
  */
-#define RICOpRect(_CopyOptions, _Point, _Width, _Height)                                                               \
-  12, 0, 6, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_Width) & 0xFF, (_Width) >> 8, (_Height) & 0xFF,   \
-      (_Height) >> 8
+#define RICOpRect(_CopyOptions, _Point, _Width, _Height)                                                                                                                           \
+  12, 0, 6, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_Width) & 0xFF, (_Width) >> 8, (_Height) & 0xFF, (_Height) >> 8
 
 /**
  * Output an RIC Circle opcode
@@ -3599,8 +3583,7 @@ string StrCat(string str1, string str2, ...);
  * \param _Point The circle's center point.  See \ref RICImgPoint.
  * \param _Radius The circle's radius.
  */
-#define RICOpCircle(_CopyOptions, _Point, _Radius)                                                                     \
-  10, 0, 7, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_Radius) & 0xFF, (_Radius) >> 8
+#define RICOpCircle(_CopyOptions, _Point, _Radius) 10, 0, 7, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_Radius) & 0xFF, (_Radius) >> 8
 
 /**
  * Output an RIC NumBox opcode
@@ -3609,8 +3592,7 @@ string StrCat(string str1, string str2, ...);
  * \param _Point The numbox bottom left corner.  See \ref RICImgPoint.
  * \param _Value The number to draw.
  */
-#define RICOpNumBox(_CopyOptions, _Point, _Value)                                                                      \
-  10, 0, 8, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_Value) & 0xFF, (_Value) >> 8
+#define RICOpNumBox(_CopyOptions, _Point, _Value) 10, 0, 8, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_Value) & 0xFF, (_Value) >> 8
 
 /**
  * Output an RIC Sprite opcode
@@ -3619,10 +3601,9 @@ string StrCat(string str1, string str2, ...);
  * \param _BytesPerRow The number of bytes per row.
  * \param _SpriteData The actual sprite data. See \ref RICSpriteData.
  */
-#define RICOpSprite(_DataAddr, _Rows, _BytesPerRow, _SpriteData)                                                       \
-  ((_Rows * _BytesPerRow) + ((_Rows * _BytesPerRow) % 2) + 8) & 0xFF,                                                  \
-      ((_Rows * _BytesPerRow) + ((_Rows * _BytesPerRow) % 2) + 8) >> 8, 1, 0, (_DataAddr) & 0xFF, (_DataAddr) >> 8,    \
-      (_Rows) & 0xFF, (_Rows) >> 8, (_BytesPerRow) & 0xFF, (_BytesPerRow) >> 8, _SpriteData
+#define RICOpSprite(_DataAddr, _Rows, _BytesPerRow, _SpriteData)                                                                                                                   \
+  ((_Rows * _BytesPerRow) + ((_Rows * _BytesPerRow) % 2) + 8) & 0xFF, ((_Rows * _BytesPerRow) + ((_Rows * _BytesPerRow) % 2) + 8) >> 8, 1, 0, (_DataAddr) & 0xFF,                  \
+      (_DataAddr) >> 8, (_Rows) & 0xFF, (_Rows) >> 8, (_BytesPerRow) & 0xFF, (_BytesPerRow) >> 8, _SpriteData
 
 /**
  * Output RIC sprite data
@@ -3636,9 +3617,8 @@ string StrCat(string str1, string str2, ...);
  * \param _MapFunction The definition of the varmap function.  See \ref
  * RICMapFunction.
  */
-#define RICOpVarMap(_DataAddr, _MapCount, _MapFunction)                                                                \
-  ((_MapCount * 4) + 6) & 0xFF, ((_MapCount * 4) + 6) >> 8, 2, 0, (_DataAddr) & 0xFF, (_DataAddr) >> 8,                \
-      (_MapCount) & 0xFF, (_MapCount) >> 8, _MapFunction
+#define RICOpVarMap(_DataAddr, _MapCount, _MapFunction)                                                                                                                            \
+  ((_MapCount * 4) + 6) & 0xFF, ((_MapCount * 4) + 6) >> 8, 2, 0, (_DataAddr) & 0xFF, (_DataAddr) >> 8, (_MapCount) & 0xFF, (_MapCount) >> 8, _MapFunction
 
 /**
  * Output an RIC map element
@@ -3674,9 +3654,8 @@ string StrCat(string str1, string str2, ...);
  * \param _Count The number of points in the polygon.
  * \param _ThePoints The list of polygon points.  See \ref RICPolygonPoints.
  */
-#define RICOpPolygon(_CopyOptions, _Count, _ThePoints)                                                                 \
-  ((_Count * 4) + 6) & 0xFF, ((_Count * 4) + 6) >> 8, 10, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8,               \
-      (_Count) & 0xFF, (_Count) >> 8, _ThePoints
+#define RICOpPolygon(_CopyOptions, _Count, _ThePoints)                                                                                                                             \
+  ((_Count * 4) + 6) & 0xFF, ((_Count * 4) + 6) >> 8, 10, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, (_Count) & 0xFF, (_Count) >> 8, _ThePoints
 
 /**
  * Output RIC polygon points
@@ -3694,9 +3673,8 @@ string StrCat(string str1, string str2, ...);
  * \param _RadiusX The x-axis radius of the ellipse.
  * \param _RadiusY The y-axis radius of the ellipse.
  */
-#define RICOpEllipse(_CopyOptions, _Point, _RadiusX, _RadiusY)                                                         \
-  12, 0, 9, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_RadiusX) & 0xFF, (_RadiusX) >> 8,                 \
-      (_RadiusY) & 0xFF, (_RadiusY) >> 8
+#define RICOpEllipse(_CopyOptions, _Point, _RadiusX, _RadiusY)                                                                                                                     \
+  12, 0, 9, 0, (_CopyOptions) & 0xFF, (_CopyOptions) >> 8, _Point, (_RadiusX) & 0xFF, (_RadiusX) >> 8, (_RadiusY) & 0xFF, (_RadiusY) >> 8
 
 /** @} */ // end of RICMacros group
 
@@ -3721,8 +3699,8 @@ string StrCat(string str1, string str2, ...);
 #define UINT_MAX 65535       /*!< The maximum value of the unsigned int type */
 #define LONG_MIN -2147483648 /*!< The minimum value of the long type */
 #define LONG_MAX 2147483647  /*!< The maximum value of the long type */
-#define ULONG_MAX                                                                                                      \
-  4294967295           /*!< The maximum value of the unsigned long type                                                \
+#define ULONG_MAX                                                                                                                                                                  \
+  4294967295           /*!< The maximum value of the unsigned long type                                                                                                            \
                         */
 #define RAND_MAX 32768 /*!< The maximum unsigned int random number returned by rand */
 /** @} */              // end of NXTLimits group

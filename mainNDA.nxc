@@ -1,1 +1,144 @@
-main.c
+// WARNING: remove this header when compiling
+#include "headers/NBCCommon.h"
+
+/*
+ * ¦¦¦¦¦¦¦¦¦¦
+ * ¦ STATES ¦
+ * ¦¦¦¦¦¦¦¦¦¦
+ */
+#define STATE_INITIALIZE 0
+#define STATE_FOLLOW_LINE 1
+
+/*
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦
+ * ¦ CONSTANTS ¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦
+ */
+#define SENSOR_LEFT IN_2
+#define SENSOR_RIGHT IN_1
+#define SENSOR_LINE IN_4
+#define SENSOR_ULTRASONIC IN_3
+
+#define MOTOR_LEFT OUT_A
+#define MOTOR_RIGHT OUT_C
+#define MOTOR_BOTH OUT_AC
+#define MOTOR_CURVE_DRAW 20
+#define MOTOR_FULL_SPEED 40
+
+/*
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+ * ¦ GLOBAL VARIABLES ¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+ */
+int state = STATE_INITIALIZE;
+
+/*
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+ * ¦ GLOBAL VARIABLES ¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+ */
+int light_threshold = -1; // NOTE: lighter color reflects more light -> Higher measurement
+int approx_speed = -1;
+int gap_min_diff = -1;
+int gap_traversed = 0;
+
+task measureGap() {
+  int distance_start = SensorUS(SENSOR_ULTRASONIC);
+  int distance_now = INT_MAX;
+  int time_diff = 0;
+  do {
+    distance_now = SensorUS(SENSOR_ULTRASONIC);
+    TextOut(0, 48, StrCat("Distance", NumToStr(distance_start), "         "));
+    TextOut(0, 40, StrCat("Distance", NumToStr(distance_now), "         "));
+    TextOut(0, 32, StrCat("time", NumToStr(time_diff), "         "));
+    //OnRev(MOTOR_BOTH, 20);
+    time_diff += 5;
+  } while(distance_now > 10);
+  approx_speed = (5 * ((distance_start - distance_now) / time_diff));
+  TextOut(0, 0, StrCat("speed", NumToStr(approx_speed), "      "));
+  //OnRev(MOTOR_BOTH, 0);
+}
+
+inline int initialize() {
+  // initialize sensors
+  SetSensorLight(SENSOR_LEFT);
+  SetSensorLight(SENSOR_RIGHT);
+  SetSensorLight(SENSOR_LINE);
+  SetSensorUltrasonic(SENSOR_ULTRASONIC);
+
+  // calculate difference between floor and line
+  int test = Sensor(SENSOR_LEFT);
+  unsigned int light_average = (Sensor(SENSOR_LEFT) + Sensor(SENSOR_RIGHT)) / 2;
+  light_threshold = 0.5 * (light_average - Sensor(SENSOR_LINE));
+  //start(measureGap());
+  StartTask(measureGap);
+  return STATE_FOLLOW_LINE;
+}
+
+inline int follow_line() {
+  unsigned int value_left = Sensor(SENSOR_LEFT);
+  unsigned int value_right = Sensor(SENSOR_RIGHT);
+  unsigned int value_line = Sensor(SENSOR_LINE);
+  unsigned int difference_left = value_left - value_line;
+  unsigned int difference_right = value_right - value_line;
+
+  TextOut(0, 24, StrCat("l=", NumToStr(value_left), "-", NumToStr(value_line), "=", NumToStr(difference_left), "       "));
+  TextOut(0, 16, StrCat("r=", NumToStr(value_right), "-", NumToStr(value_line), "=", NumToStr(difference_right), "       "));
+  TextOut(0, 8, StrCat("t=", NumToStr(light_threshold)));
+
+  if (difference_left > light_threshold && difference_right > light_threshold) {
+    gap_traversed = 0;
+    TextOut(0, 0, "move forward!");
+    TextOut(0, 0, "move forward!");
+    // NOTE: move forward
+    OnRev(MOTOR_BOTH, MOTOR_FULL_SPEED);
+    return STATE_FOLLOW_LINE;
+  } else if (difference_left <= light_threshold && difference_right > light_threshold) {
+    gap_traversed = 0;
+    TextOut(0, 0, "move left!   ");
+    // NOTE: move left
+    OnRev(MOTOR_RIGHT, MOTOR_FULL_SPEED);
+    OnRev(MOTOR_LEFT, MOTOR_FULL_SPEED - MOTOR_CURVE_DRAW);
+    return STATE_FOLLOW_LINE;
+  } else if (difference_left > light_threshold && difference_right <= light_threshold) {
+    gap_traversed = 0;
+    TextOut(0, 0, "move right!    ");
+    // NOTE: move right
+    OnRev(MOTOR_LEFT, MOTOR_FULL_SPEED);
+    OnRev(MOTOR_RIGHT, MOTOR_FULL_SPEED - MOTOR_CURVE_DRAW);
+    return STATE_FOLLOW_LINE;
+  } else {
+    TextOut(0, 0, "gap!        ");
+    OnRev(MOTOR_BOTH, MOTOR_FULL_SPEED);
+    // TODO: move forward and count gap
+    
+    if(gap_min_diff == -1) {
+      // TODO: measure gap
+    } else {
+      if(gap_traversed > gap_min_diff) {
+        // TODO: jumpt to next task
+      } else {
+        Wait(MS_50);
+        gap_traversed += MS_50;
+        return STATE_FOLLOW_LINE;
+      }
+    }
+    
+    return STATE_FOLLOW_LINE;
+  }
+  return -1;
+}
+
+
+task main() {
+  while (1) {
+    switch (state) {
+    case STATE_INITIALIZE:
+      state = initialize();
+      break;
+    case STATE_FOLLOW_LINE:
+      state = follow_line();
+      break;
+    }
+  }
+}
