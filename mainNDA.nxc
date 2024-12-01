@@ -23,13 +23,21 @@
 #define MOTOR_LEFT OUT_A
 #define MOTOR_RIGHT OUT_C
 #define MOTOR_BOTH OUT_AC
-#define MOTOR_CURVE_DRAW 20
-#define MOTOR_FULL_SPEED 40
 
+// TODO: find best value for this
+#define MOTOR_FULL_SPEED 40
+// TODO: find best value for this
+#define MOTOR_CURVE_DRAW 20
+
+// TODO: measure this value
 #define DISTANCE_CORNER_MIDDLE 15
+// TODO: find best value for this
 #define DISTANCE_WALL_BUFFER 5
+// TODO: measure this value
 #define DISTANCE_TIRE_TIRE 10
+// TODO: find best value for this
 #define APPROACH_WALL_SPEED_MODIFIER 5
+// TODO: find best value for this
 #define APPROACH_WALL_MEASURE_INTERVAL MS_5
 
 /*
