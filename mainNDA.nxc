@@ -64,6 +64,7 @@ task approachWall() {
     distance_now = SensorUS(SENSOR_ULTRASONIC);
   } while(distance_now > DISTANCE_CORNER_MIDDLE + DISTANCE_WALL_BUFFER);
   approx_speed = (APPROACH_WALL_SPEED_MODIFIER * ((distance_start - distance_now) / time_diff));
+  motor_throttle = MOTOR_FULL_SPEED;
   TextOut(0, 0, StrCat("speed", NumToStr(approx_speed), "      "));
 }
 
@@ -125,7 +126,9 @@ inline int follow_line() {
         return STATE_FOLLOW_LINE;
       } else {
         if(approx_speed != -1) {
+          OnRev(MOTOR_BOTH, 0);
           gap_min_diff = 6 / approx_speed;
+
           return STATE_TURN_AROUND;
         }
         return STATE_FOLLOW_LINE;
@@ -146,6 +149,13 @@ inline int follow_line() {
   return -1;
 }
 
+inline int turn_around() {
+  OnRev(MOTOR_LEFT, motor_throttle);
+  OnRev(MOTOR_RIGHT, -motor_throttle);
+  Wait((DISTANCE_TIRE_TIRE * 3.14) / (2 * approx_speed));
+  return STATE_FOLLOW_LINE;
+}
+
 
 task main() {
   while (1) {
@@ -155,6 +165,9 @@ task main() {
       break;
     case STATE_FOLLOW_LINE:
       state = follow_line();
+      break;
+    case STATE_TURN_AROUND:
+      state = turn_around();
       break;
     }
   }
