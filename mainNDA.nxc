@@ -2,18 +2,18 @@
 #include "headers/NBCCommon.h"
 
 /*
- * Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦
- * Â¦ STATES Â¦
- * Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦
+ * ¦¦¦¦¦¦¦¦¦¦
+ * ¦ STATES ¦
+ * ¦¦¦¦¦¦¦¦¦¦
  */
 #define STATE_INITIALIZE 0
 #define STATE_FOLLOW_LINE 1
 #define STATE_TURN_AROUND 2
 
 /*
- * Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦
- * Â¦ CONSTANTS Â¦
- * Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦
+ * ¦ CONSTANTS ¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦
  */
 #define SENSOR_LEFT IN_4
 #define SENSOR_RIGHT IN_1
@@ -41,45 +41,42 @@
 #define APPROACH_WALL_MEASURE_INTERVAL MS_5
 
 /*
- * Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦
- * Â¦ GLOBAL VARIABLES Â¦
- * Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+ * ¦ GLOBAL VARIABLES ¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
  */
 int state = STATE_INITIALIZE;
 
 /*
- * Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦
- * Â¦ GLOBAL VARIABLES Â¦
- * Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+ * ¦ GLOBAL VARIABLES ¦
+ * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
  */
 int light_threshold = -1; // NOTE: lighter color reflects more light -> Higher measurement
-float approx_speed = -1; // unit: cm/ms
+float approx_speed = -1.0; // unit: cm/ms
 int motor_throttle = MOTOR_FULL_SPEED;
 int motor_throttle_curve = MOTOR_FULL_SPEED - MOTOR_CURVE_DRAW;
-float gap_min_diff = -1;
+float gap_min_diff = -1.0;
 int gap_traversed = 0;
 
-void apply_motor_throttle(int modifier) {
-  motor_throttle = MOTOR_FULL_SPEED / modifier;
-  motor_throttle_curve = (MOTOR_FULL_SPEED - MOTOR_CURVE_DRAW) / modifier;
-}
-
 task approachWall() {
-  int distance_start = SensorUS(SENSOR_ULTRASONIC);
-  int distance_now = INT_MAX;
-  int time_diff = 0;
-  apply_motor_throttle(APPROACH_WALL_SPEED_MODIFIER);
+  TextOut(0, 48, "Start approaching Wall");
+  float distance_start = SensorUS(SENSOR_ULTRASONIC);
+  TextOut(0, 48, "plapla");
+  float distance_now = 999.0;
+  float time_diff = 0.0;
+  // apply_motor_throttle(APPROACH_WALL_SPEED_MODIFIER);
   do {
     TextOut(0, 48, StrCat("Distance_s", NumToStr(distance_start), "         "));
     TextOut(0, 40, StrCat("Distance_n", NumToStr(distance_now), "         "));
     TextOut(0, 32, StrCat("time", NumToStr(time_diff), "         "));
-    //Wait(APPROACH_WALL_MEASURE_INTERVAL);
+    Wait(APPROACH_WALL_MEASURE_INTERVAL);
     time_diff += APPROACH_WALL_MEASURE_INTERVAL;
     distance_now = SensorUS(SENSOR_ULTRASONIC);
   } while(distance_now > DISTANCE_CORNER_MIDDLE + DISTANCE_WALL_BUFFER);
   approx_speed = (APPROACH_WALL_SPEED_MODIFIER * ((distance_start - distance_now) / time_diff));
-  apply_motor_throttle(1);
-  TextOut(0, 0, StrCat("speed", NumToStr(approx_speed), "      "));
+  // apply_motor_throttle(1);
+  TextOut(0, 40, StrCat(NumToStr(distance_start), "-", NumToStr(distance_now), "/", NumToStr(time_diff), "=", NumToStr(approx_speed), "      "));
 }
 
 inline int initialize() {
@@ -91,19 +88,19 @@ inline int initialize() {
 
   // calculate difference between floor and line
   int test = Sensor(SENSOR_LEFT);
-  unsigned int light_average = (Sensor(SENSOR_LEFT) + Sensor(SENSOR_RIGHT)) / 2;
-  light_threshold = 0.5 * (light_average - Sensor(SENSOR_LINE));
+  int light_average = (Sensor(SENSOR_LEFT) + Sensor(SENSOR_RIGHT)) / 2;
+  light_threshold = 0 - (0.4 * (light_average - Sensor(SENSOR_LINE)));
   //start(measureGap());
   StartTask(approachWall);
   return STATE_FOLLOW_LINE;
 }
 
 inline int follow_line() {
-  unsigned int value_left = Sensor(SENSOR_LEFT);
-  unsigned int value_right = Sensor(SENSOR_RIGHT);
-  unsigned int value_line = Sensor(SENSOR_LINE);
-  unsigned int difference_left = value_left - value_line;
-  unsigned int difference_right = value_right - value_line;
+  int value_left = Sensor(SENSOR_LEFT);
+  int value_right = Sensor(SENSOR_RIGHT);
+  int value_line = Sensor(SENSOR_LINE);
+  int difference_left = value_left - value_line;
+  int difference_right = value_right - value_line;
 
   TextOut(0, 24, StrCat("l=", NumToStr(value_left), "-", NumToStr(value_line), "=", NumToStr(difference_left), "       "));
   TextOut(0, 16, StrCat("r=", NumToStr(value_right), "-", NumToStr(value_line), "=", NumToStr(difference_right), "       "));
@@ -111,7 +108,6 @@ inline int follow_line() {
 
   if (difference_left > light_threshold && difference_right > light_threshold) {
     gap_traversed = 0;
-    TextOut(0, 0, "move forward!");
     TextOut(0, 0, "move forward!");
     // NOTE: move forward
     OnFwd(MOTOR_BOTH, motor_throttle);
@@ -131,22 +127,18 @@ inline int follow_line() {
     OnFwd(MOTOR_LEFT, motor_throttle_curve);
     return STATE_FOLLOW_LINE;
   } else {
-    TextOut(0, 0, "gap!        ");
+    TextOut(0, 0, StrCat("gap! ", NumToStr(gap_min_diff), " ", NumToStr(approx_speed), "       "));
     OnFwd(MOTOR_BOTH, motor_throttle);
     // TODO: move forward and count gap
-    
-    if(gap_min_diff == -1) {
-      if(motor_throttle == MOTOR_FULL_SPEED) {
-        return STATE_FOLLOW_LINE;
-      } else {
-        if(approx_speed != -1) {
-          OnFwd(MOTOR_BOTH, 0);
-          gap_min_diff = 6 / approx_speed;
 
-          return STATE_TURN_AROUND;
-        }
-        return STATE_FOLLOW_LINE;
+    if(gap_min_diff == -1) {
+      if(approx_speed != -1.0) {
+        TextOut(0, 48, "setting gap_min_diff");
+        OnFwd(MOTOR_BOTH, 0);
+        gap_min_diff = 6 / approx_speed;
+        return STATE_TURN_AROUND;
       }
+      return STATE_FOLLOW_LINE;
     } else {
       if(gap_traversed > gap_min_diff) {
         // TODO: jump to next task
@@ -157,16 +149,18 @@ inline int follow_line() {
         return STATE_FOLLOW_LINE;
       }
     }
-    
+
     return STATE_FOLLOW_LINE;
   }
   return -1;
 }
 
 inline int turn_around() {
+  TextOut(0, 48, "turning around");
   OnRev(MOTOR_LEFT, motor_throttle);
   OnFwd(MOTOR_RIGHT, motor_throttle);
-  Wait((DISTANCE_TIRE_TIRE * 3.14) / (2 * approx_speed));
+  Wait(((16.0 * 3.14) / (2 * approx_speed)) * 7.5);
+  TextOut(0, 48, "turned around");
   return STATE_FOLLOW_LINE;
 }
 
