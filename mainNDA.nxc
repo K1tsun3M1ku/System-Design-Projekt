@@ -25,7 +25,7 @@
 #define MOTOR_BOTH OUT_AC
 
 // TODO: find best value for this
-#define MOTOR_FULL_SPEED 40
+#define MOTOR_FULL_SPEED 60
 // TODO: find best value for this
 #define MOTOR_CURVE_DRAW 40
 
@@ -62,14 +62,14 @@ int gap_traversed = 0;
 task approachWall() {
   TextOut(0, 48, "Start approaching Wall");
   float distance_start = SensorUS(SENSOR_ULTRASONIC);
-  TextOut(0, 48, "plapla");
+  //TextOut(0, 48, "plapla");
   float distance_now = 999.0;
   float time_diff = 0.0;
   // apply_motor_throttle(APPROACH_WALL_SPEED_MODIFIER);
   do {
-    TextOut(0, 48, StrCat("Distance_s", NumToStr(distance_start), "         "));
-    TextOut(0, 40, StrCat("Distance_n", NumToStr(distance_now), "         "));
-    TextOut(0, 32, StrCat("time", NumToStr(time_diff), "         "));
+    // TextOut(0, 48, StrCat("Distance_s", NumToStr(distance_start), "         "));
+    // TextOut(0, 40, StrCat("Distance_n", NumToStr(distance_now), "         "));
+    // TextOut(0, 32, StrCat("time", NumToStr(time_diff), "         "));
     Wait(APPROACH_WALL_MEASURE_INTERVAL);
     time_diff += APPROACH_WALL_MEASURE_INTERVAL;
     distance_now = SensorUS(SENSOR_ULTRASONIC);
@@ -89,7 +89,7 @@ inline int initialize() {
   // calculate difference between floor and line
   int test = Sensor(SENSOR_LEFT);
   int light_average = (Sensor(SENSOR_LEFT) + Sensor(SENSOR_RIGHT)) / 2;
-  light_threshold = 0 - (0.4 * (light_average - Sensor(SENSOR_LINE)));
+  light_threshold = 0.35 * (light_average - Sensor(SENSOR_LINE));
   //start(measureGap());
   StartTask(approachWall);
   return STATE_FOLLOW_LINE;
@@ -99,34 +99,36 @@ inline int follow_line() {
   int value_left = Sensor(SENSOR_LEFT);
   int value_right = Sensor(SENSOR_RIGHT);
   int value_line = Sensor(SENSOR_LINE);
-  int difference_left = value_left - value_line;
-  int difference_right = value_right - value_line;
-
-  TextOut(0, 24, StrCat("l=", NumToStr(value_left), "-", NumToStr(value_line), "=", NumToStr(difference_left), "       "));
-  TextOut(0, 16, StrCat("r=", NumToStr(value_right), "-", NumToStr(value_line), "=", NumToStr(difference_right), "       "));
+  int diff_left_line = abs(value_left - value_line);
+  int diff_right_line = abs(value_right - value_line);
+  int diff_left_right = abs(value_left - value_right);
+  
+  TextOut(0, 32, StrCat("li=", NumToStr(value_left), "-", NumToStr(value_line), "=", NumToStr(diff_left_line), "       "));
+  TextOut(0, 24, StrCat("ri=", NumToStr(value_right), "-", NumToStr(value_line), "=", NumToStr(diff_right_line), "       "));
+  TextOut(0, 16, StrCat("lr=", NumToStr(value_left), "-", NumToStr(value_right), "=", NumToStr(diff_left_right), "       "));
   TextOut(0, 8, StrCat("t=", NumToStr(light_threshold)));
 
-  if (difference_left > light_threshold && difference_right > light_threshold) {
+  if (diff_left_right <= light_threshold && diff_left_line > light_threshold && diff_right_line > light_threshold) {
     gap_traversed = 0;
     TextOut(0, 0, "move forward!");
     // NOTE: move forward
     OnFwd(MOTOR_BOTH, motor_throttle);
     return STATE_FOLLOW_LINE;
-  } else if (difference_left <= light_threshold && difference_right > light_threshold) {
-    gap_traversed = 0;
-    TextOut(0, 0, "move left!   ");
-    // NOTE: move left
-    OnFwd(MOTOR_LEFT, motor_throttle);
-    OnFwd(MOTOR_RIGHT, motor_throttle_curve);
-    return STATE_FOLLOW_LINE;
-  } else if (difference_left > light_threshold && difference_right <= light_threshold) {
+  } else if (diff_left_right > light_threshold && diff_left_line <= light_threshold && diff_right_line > light_threshold) {
     gap_traversed = 0;
     TextOut(0, 0, "move right!    ");
     // NOTE: move right
     OnFwd(MOTOR_RIGHT, motor_throttle);
     OnFwd(MOTOR_LEFT, motor_throttle_curve);
     return STATE_FOLLOW_LINE;
-  } else {
+  }  else if (diff_left_right > light_threshold && diff_left_line > light_threshold && diff_right_line <= light_threshold) {
+    gap_traversed = 0;
+    TextOut(0, 0, "move left!   ");
+    // NOTE: move left
+    OnFwd(MOTOR_LEFT, motor_throttle);
+    OnFwd(MOTOR_RIGHT, motor_throttle_curve);
+    return STATE_FOLLOW_LINE;
+  }else {
     TextOut(0, 0, StrCat("gap! ", NumToStr(gap_min_diff), " ", NumToStr(approx_speed), "       "));
     OnFwd(MOTOR_BOTH, motor_throttle);
     // TODO: move forward and count gap
