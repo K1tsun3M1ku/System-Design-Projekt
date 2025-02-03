@@ -10,7 +10,7 @@
 #define STATE_FOLLOW_LINE 1
 #define STATE_TURN_AROUND 2
 #define STATE_APPROACH_GATE 3
-
+#define STATE_WAIT_GATE 4
 /*
  * ¦¦¦¦¦¦¦¦¦¦¦¦¦
  * ¦ CONSTANTS ¦
@@ -25,21 +25,16 @@
 #define MOTOR_RIGHT OUT_C
 #define MOTOR_BOTH OUT_AC
 
-// TODO: find best value for this
 #define MOTOR_FULL_SPEED 60
-// TODO: find best value for this
 #define MOTOR_CURVE_DRAW 60
 
-// TODO: measure this value
 #define DISTANCE_CORNER_MIDDLE 15
-// TODO: find best value for this
 #define DISTANCE_WALL_BUFFER 5
-// TODO: measure this value
 #define DISTANCE_TIRE_TIRE 10
-// TODO: find best value for this
 #define APPROACH_WALL_SPEED_MODIFIER 1
-// TODO: find best value for this
 #define APPROACH_WALL_MEASURE_INTERVAL MS_5
+// TODO: find best value for this
+#define BALL_DISTANCE = 15
 
 /*
  * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
@@ -187,6 +182,25 @@ inline int turn_around() {
   return STATE_FOLLOW_LINE;
 }
 
+inline int approach_gate() {
+  steer_direction();
+  float distance_gate = SensorUS(SENSOR_ULTRASONIC);
+  if (distance_gate > BALL_DISTANCE) {
+    return STATE_APPROACH_GATE;
+  } else {
+    OnFwd(MOTOR_BOTH, 0);
+    return STATE_WAIT_GATE;
+  }
+}
+inline int wait_for_gate() {
+  float distance_gate = SensorUS(SENSOR_ULTRASONIC);
+  if (distance_gate < BALL_DISTANCE + 5.0) {
+    // next_task = STATE_IDK_YET
+    return STATE_FOLLOW_LINE;
+  } else {
+    return STATE_WAIT_GATE;
+  }
+}
 
 task main() {
   while (1) {
@@ -199,6 +213,12 @@ task main() {
       break;
     case STATE_TURN_AROUND:
       state = turn_around();
+      break;
+    case STATE_APPROACH_GATE:
+      state = approach_gate();
+      break;
+    case STATE_WAIT_GATE:
+      state = wait_for_gate();
       break;
     }
   }
