@@ -34,7 +34,7 @@
 #define APPROACH_WALL_SPEED_MODIFIER 1
 #define APPROACH_WALL_MEASURE_INTERVAL MS_5
 // TODO: find best value for this
-#define BALL_DISTANCE = 15
+#define BALL_DISTANCE 15
 
 /*
  * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
