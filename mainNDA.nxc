@@ -1,5 +1,5 @@
 // WARNING: remove this header when compiling
-#include "headers/NBCCommon.h"
+// #include "headers/NBCCommon.h"
 
 /*
  * ¦¦¦¦¦¦¦¦¦¦
@@ -11,6 +11,9 @@
 #define STATE_TURN_AROUND 2
 #define STATE_APPROACH_GATE 3
 #define STATE_WAIT_GATE 4
+#define STATE_APPROACH_THREE_LINES 5
+#define STATE_APPROACH_BASKET 6
+#define STATE_DROP_BALL 7
 /*
  * ¦¦¦¦¦¦¦¦¦¦¦¦¦
  * ¦ CONSTANTS ¦
@@ -24,6 +27,7 @@
 #define MOTOR_LEFT OUT_A
 #define MOTOR_RIGHT OUT_C
 #define MOTOR_BOTH OUT_AC
+#define MOTOR_BALL OUT_B
 
 #define MOTOR_FULL_SPEED 60
 #define MOTOR_CURVE_DRAW 60
@@ -76,16 +80,15 @@ task approachWall() {
   TextOut(0, 40, StrCat(NumToStr(distance_start), "-", NumToStr(distance_now), "/", NumToStr(time_diff), "=", NumToStr(approx_speed), "      "));
 }
 
-task checkGap() {
-
-}
-
 inline int initialize() {
   // initialize sensors
   SetSensorLight(SENSOR_LEFT);
   SetSensorLight(SENSOR_RIGHT);
   SetSensorLight(SENSOR_LINE);
   SetSensorUltrasonic(SENSOR_ULTRASONIC);
+  
+  // set motor for ball to 0 so it activates its brakes
+  OnFwd(MOTOR_BALL, 0);
 
   // calculate difference between floor and line
   int test = Sensor(SENSOR_LEFT);
@@ -155,8 +158,14 @@ inline int follow_line() {
         gap_traversed = 0;
         switch (next_task) {
         case STATE_APPROACH_GATE:
-             // next_task = STATE_IDK_YET
+             next_task = STATE_APPROACH_THREE_LINES;
              return STATE_APPROACH_GATE;
+        case STATE_APPROACH_THREE_LINES:
+             next_task = STATE_APPROACH_BASKET;
+             // TODO: start push wood stuff here
+             return STATE_FOLLOW_LINE;
+        case STATE_APPROACH_BASKET:
+             return STATE_APPROACH_BASKET;
         default:
              TextOut(0, 40, "gapstatechange :(");
              return STATE_FOLLOW_LINE;
@@ -183,6 +192,7 @@ inline int turn_around() {
 }
 
 inline int approach_gate() {
+  TextOut(0, 48, "approaching Gate");
   steer_direction();
   float distance_gate = SensorUS(SENSOR_ULTRASONIC);
   if (distance_gate > BALL_DISTANCE) {
@@ -193,13 +203,39 @@ inline int approach_gate() {
   }
 }
 inline int wait_for_gate() {
+  TextOut(0, 48, "wait for gate");
   float distance_gate = SensorUS(SENSOR_ULTRASONIC);
   if (distance_gate < BALL_DISTANCE + 5.0) {
-    // next_task = STATE_IDK_YET
     return STATE_FOLLOW_LINE;
   } else {
     return STATE_WAIT_GATE;
   }
+}
+
+inline int approach_basket() {
+  TextOut(0, 48, "approaching Basket");
+  steer_direction();
+  float distance_basket = SensorUS(SENSOR_ULTRASONIC);
+  if (distance_basket > 1) {
+    return STATE_APPROACH_BASKET;
+  } else {
+    int keep_approaching_timer = 0;
+    while (keep_approaching_timer < MS_500) {
+      steer_direction();
+      Wait(MS_50);
+      keep_approaching_timer += MS_50;
+    }
+    return STATE_DROP_BALL;
+  }
+}
+inline int drop_ball() {
+  OnFwd(MOTOR_BOTH, 0);
+  OnFwd(MOTOR_BALL, 5);
+  Wait(MS_100);
+  OnRev(MOTOR_BALL, 5);
+  Wait(MS_100);
+  OnFwd(MOTOR_BALL, 0);
+  return STATE_DROP_BALL;
 }
 
 task main() {
@@ -219,6 +255,18 @@ task main() {
       break;
     case STATE_WAIT_GATE:
       state = wait_for_gate();
+      break;
+    case STATE_APPROACH_THREE_LINES:
+      state = follow_line();
+      break;
+    case STATE_APPROACH_BASKET:
+      state = approach_basket();
+      break;
+    case STATE_DROP_BALL:
+      state = drop_ball();
+      break;
+    default:
+      state = follow_line();
       break;
     }
   }
