@@ -29,16 +29,15 @@
 #define MOTOR_BOTH OUT_AC
 #define MOTOR_BALL OUT_B
 
-#define MOTOR_FULL_SPEED 60
-#define MOTOR_CURVE_DRAW 60
+#define MOTOR_FULL_SPEED 50
+#define MOTOR_CURVE_DRAW MOTOR_FULL_SPEED
 
 #define DISTANCE_CORNER_MIDDLE 15
 #define DISTANCE_WALL_BUFFER 5
 #define DISTANCE_TIRE_TIRE 10
 #define APPROACH_WALL_SPEED_MODIFIER 1
 #define APPROACH_WALL_MEASURE_INTERVAL MS_5
-// TODO: find best value for this
-#define BALL_DISTANCE 15
+#define BALL_DISTANCE 20
 
 /*
  * ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
@@ -86,9 +85,12 @@ inline int initialize() {
   SetSensorLight(SENSOR_RIGHT);
   SetSensorLight(SENSOR_LINE);
   SetSensorUltrasonic(SENSOR_ULTRASONIC);
-  
+
+  // rotate basket to idk
+  RotateMotor(MOTOR_BALL, 50, -50);
   // set motor for ball to 0 so it activates its brakes
   OnFwd(MOTOR_BALL, 0);
+  
 
   // calculate difference between floor and line
   int test = Sensor(SENSOR_LEFT);
@@ -99,7 +101,7 @@ inline int initialize() {
   return STATE_FOLLOW_LINE;
 }
 
-inline int steer_direction() {
+int steer_direction() {
   int value_left = Sensor(SENSOR_LEFT);
   int value_right = Sensor(SENSOR_RIGHT);
   int value_line = Sensor(SENSOR_LINE);
@@ -107,10 +109,10 @@ inline int steer_direction() {
   int diff_right_line = abs(value_right - value_line);
   int diff_left_right = abs(value_left - value_right);
 
-  TextOut(0, 32, StrCat("li=", NumToStr(value_left), "-", NumToStr(value_line), "=", NumToStr(diff_left_line), "       "));
-  TextOut(0, 24, StrCat("ri=", NumToStr(value_right), "-", NumToStr(value_line), "=", NumToStr(diff_right_line), "       "));
-  TextOut(0, 16, StrCat("lr=", NumToStr(value_left), "-", NumToStr(value_right), "=", NumToStr(diff_left_right), "       "));
-  TextOut(0, 8, StrCat("t=", NumToStr(light_threshold)));
+  // TextOut(0, 32, StrCat("li=", NumToStr(value_left), "-", NumToStr(value_line), "=", NumToStr(diff_left_line), "       "));
+  // TextOut(0, 24, StrCat("ri=", NumToStr(value_right), "-", NumToStr(value_line), "=", NumToStr(diff_right_line), "       "));
+  // TextOut(0, 16, StrCat("lr=", NumToStr(value_left), "-", NumToStr(value_right), "=", NumToStr(diff_left_right), "       "));
+  // TextOut(0, 8, StrCat("t=", NumToStr(light_threshold)));
 
   if (diff_left_right <= light_threshold && diff_left_line > light_threshold && diff_right_line > light_threshold) {
     gap_traversed = 0;
@@ -136,7 +138,8 @@ inline int steer_direction() {
   return 0;
 }
 
-inline int follow_line() {
+int follow_line() {
+  TextOut(0, 48, "follow line");
   if(steer_direction() == 1) {
     return STATE_FOLLOW_LINE;
   } else {
@@ -146,9 +149,11 @@ inline int follow_line() {
 
     if(gap_min_diff == -1) {
       if(approx_speed != -1.0) {
-        TextOut(0, 48, "setting gap_min_diff");
+        TextOut(0, 40, "setting gap_min_diff");
         OnFwd(MOTOR_BOTH, 0);
         gap_min_diff = 6 / approx_speed;
+        TextOut(0, 40, StrCat(NumToStr(gap_min_diff), " setting gap_min_diff"));
+        next_task = STATE_APPROACH_GATE;
         return STATE_TURN_AROUND;
       }
       return STATE_FOLLOW_LINE;
@@ -205,9 +210,11 @@ inline int approach_gate() {
 inline int wait_for_gate() {
   TextOut(0, 48, "wait for gate");
   float distance_gate = SensorUS(SENSOR_ULTRASONIC);
-  if (distance_gate < BALL_DISTANCE + 5.0) {
+  TextOut(0, 32, StrCat("d=", NumToStr(distance_gate)));
+  if (distance_gate > BALL_DISTANCE + 5) {
     return STATE_FOLLOW_LINE;
   } else {
+    Wait(MS_50);
     return STATE_WAIT_GATE;
   }
 }
@@ -216,9 +223,11 @@ inline int approach_basket() {
   TextOut(0, 48, "approaching Basket");
   steer_direction();
   float distance_basket = SensorUS(SENSOR_ULTRASONIC);
-  if (distance_basket > 1) {
+  TextOut(0, 32, StrCat("d=", NumToStr(distance_basket)));
+  if (distance_basket > 5) {
     return STATE_APPROACH_BASKET;
   } else {
+    TextOut(0, 48, "keep approaching Basket");
     int keep_approaching_timer = 0;
     while (keep_approaching_timer < MS_500) {
       steer_direction();
@@ -229,12 +238,7 @@ inline int approach_basket() {
   }
 }
 inline int drop_ball() {
-  OnFwd(MOTOR_BOTH, 0);
-  OnFwd(MOTOR_BALL, 5);
-  Wait(MS_100);
-  OnRev(MOTOR_BALL, 5);
-  Wait(MS_100);
-  OnFwd(MOTOR_BALL, 0);
+  RotateMotor(MOTOR_BALL, 50, 50);
   return STATE_DROP_BALL;
 }
 
